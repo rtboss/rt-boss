@@ -58,6 +58,7 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
 
   #ifdef _BOSS_TCB_EXTEND_
   _boss_tcb_ex_t          ex;             /* TCB Extend     */
+  struct boss_tcb_struct *ex_task_link;   /* Task list link */
   #endif
 } boss_tcb_t;
 
@@ -83,6 +84,10 @@ void Boss_task_create( int (*task)(void *p_arg), void *p_arg,
                         const char *name );
 
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio);
+#ifdef _BOSS_TCB_EXTEND_
+unsigned int Boss_ex_task_count(void);
+boss_tcb_t *Boss_ex_task_list(unsigned int i);
+#endif
 
 void _Boss_sched_lock(void);
 void _Boss_sched_free(void);

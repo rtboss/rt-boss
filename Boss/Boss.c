@@ -24,6 +24,12 @@
 
 /*static*/ boss_reg_t _sched_locking    = 0;
 
+
+#ifdef _BOSS_TCB_EXTEND_
+/*static*/ boss_tcb_t   *_ex_task_list  = _BOSS_NULL;
+/*static*/ unsigned int _ex_task_count  = 0;
+#endif
+
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
@@ -75,6 +81,14 @@ static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
     p_tcb->name[_BOSS_TCB_NAME_SIZE - 1] = 0;
   }
   #endif
+  #ifdef _BOSS_TCB_EXTEND_
+  BOSS_IRQ_DISABLE();  
+  _ex_task_count++;
+  
+  p_tcb->ex_task_link = _ex_task_list;
+  _ex_task_list = p_tcb;
+  BOSS_IRQ_RESTORE();
+  #endif
 }
 
 
@@ -109,18 +123,6 @@ void Boss_start(void)
   BOSS_IRQ_RESTORE();
   
   _Boss_start_schedule();                       /* 스케줄러 시작  */  
-}
-
-
-/*===========================================================================
-    _   B O S S _ S T A R T _ T C B _ S P
----------------------------------------------------------------------------*/
-boss_stk_t *_Boss_start_tcb_sp(void)
-{
-  boss_stk_t *start_tcb_sp;
-
-  start_tcb_sp = _current_tcb->sp;
-  return start_tcb_sp;
 }
 
 
@@ -355,12 +357,65 @@ void _Boss_task_exit(int exit_code)
   BOSS_ASSERT(Boss_sched_locking() == 0);
   
   cur_tcb = Boss_self();
+  
+  #ifdef _BOSS_TCB_EXTEND_
+  _Boss_sched_lock();
+  BOSS_IRQ_DISABLE();
+  _ex_task_count--;
+  BOSS_IRQ_RESTORE();
+  
+  if(_ex_task_list == cur_tcb) {
+    _ex_task_list = cur_tcb->ex_task_link;
+  } else {
+    boss_tcb_t *p_prev = _ex_task_list;
+    while(p_prev->ex_task_link != cur_tcb) {
+      p_prev = p_prev->ex_task_link;
+      BOSS_ASSERT(p_prev != _BOSS_NULL);
+    }
+    p_prev->ex_task_link = cur_tcb->ex_task_link;
+  }
+  cur_tcb->ex_task_link = _BOSS_NULL;
+  _Boss_sched_free();
+  #endif
+  
   cur_tcb->wait   = 0;
   _Boss_sched_list_remove(cur_tcb);
   
   _Boss_schedule();
 }
 
+
+#ifdef _BOSS_TCB_EXTEND_
+/*===========================================================================
+    B O S S _ E X _ T A S K _ C O U N T
+---------------------------------------------------------------------------*/
+unsigned int Boss_ex_task_count(void)
+{
+  return _ex_task_count;
+}
+
+
+/*===========================================================================
+    B O S S _ E X _ T A S K _ L I S T
+---------------------------------------------------------------------------*/
+boss_tcb_t *Boss_ex_task_list(unsigned int i)
+{
+  boss_tcb_t *p_tcb = _BOSS_NULL;
+  
+  _Boss_sched_lock();
+  if(i < _ex_task_count)
+  {
+    p_tcb = _ex_task_list;
+    while(i != 0) {
+      p_tcb = p_tcb->ex_task_link;
+      BOSS_ASSERT(p_tcb != _BOSS_NULL);
+    }
+  }
+  _Boss_sched_free();
+
+  return p_tcb;
+}
+#endif /* _BOSS_TCB_EXTEND_ */
 
 /*
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
