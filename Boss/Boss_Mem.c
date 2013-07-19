@@ -90,8 +90,10 @@ void *Boss_malloc(boss_uptr_t size)
 
   if(_mem_pool_init == _BOSS_FALSE)
   {
-    _mem_pool_init = _BOSS_TRUE;
+    BOSS_IRQ_DISABLE();
     _Boss_mem_pool_init();                              /* Memory Pool init */
+    _mem_pool_init = _BOSS_TRUE;
+    BOSS_IRQ_RESTORE();
   }
                                                         /* 메모리 크기 정렬 */
   size = size + ( sizeof(_boss_mem_blk_t) + (_ALIGN_SIZE-1) );
@@ -159,15 +161,20 @@ void Boss_mfree(void *p)
   _boss_mem_blk_t *p_next;
   
   p_free = (_boss_mem_blk_t *)( (boss_uptr_t)p - sizeof(_boss_mem_blk_t) );
-  
-  BOSS_ASSERT( (_MEM_POOL_START < p) && (p < _MEM_POOL_END) );
+
+  BOSS_ASSERT( p_free->in_use == _MEM_MAGIC_CODE_ );
+  BOSS_ASSERT( (_MEM_POOL_START <= p_free) && (p_free < _MEM_POOL_END) );  
+
+
+
+  BOSS_IRQ_DISABLE();
+
   BOSS_ASSERT( (p_free->prev != _BOSS_NULL) ? (p_free->prev->next == p_free)
                                             : (_MEM_POOL_START == p_free) );
+  
   BOSS_ASSERT( (p_free->next != _BOSS_NULL) ? (p_free->next->prev == p_free)
         : ((boss_uptr_t)p_free + p_free->size == (boss_uptr_t)_MEM_POOL_END) );
-  BOSS_ASSERT( p_free->in_use == _MEM_MAGIC_CODE_ );
   
-  BOSS_IRQ_DISABLE();
   #ifdef _BOSS_MEM_INFO_
   _boss_mem_info.used_size -= p_free->size;
   #endif
