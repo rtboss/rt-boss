@@ -30,7 +30,7 @@ static void _Boss_mbox_remove(boss_mbox_q_t *mbox_q, _mbox_head_t *h_mbox);
 /*===========================================================================
     B O S S _ M B O X _ Q _ I N I T
 ---------------------------------------------------------------------------*/
-void Boss_mbox_q_init(boss_tcb_t *p_tcb, boss_mbox_q_t *mbox_q, boss_sigs_t sig)
+void Boss_mbox_q_init(boss_mbox_q_t *mbox_q, boss_tcb_t *p_tcb, boss_sigs_t sig)
 {
   BOSS_ASSERT(mbox_q->owner_tcb == _BOSS_NULL);
   BOSS_ASSERT(mbox_q->mbox_fifo == _BOSS_NULL);
@@ -67,7 +67,7 @@ void *Boss_mbox_alloc(boss_uptr_t size)
 void Boss_mbox_free(void *p_mbox)
 {
   _mbox_head_t  *h_mbox = ((_mbox_head_t *)p_mbox) - 1;
-                        // h_mbox : ( (void *)mbox - sizeof(_mbox_head_t) )
+                        // h_mbox = ( (void *)mbox - sizeof(_mbox_head_t) )
   Boss_mfree(h_mbox);
 }
 
@@ -183,11 +183,13 @@ void Boss_mbox_pend_done(void *p_mbox, boss_uptr_t rsp)
 
   BOSS_ASSERT(h_mbox->state == _MBOX_EXECUTE);
 
+  _Boss_sched_lock();
   if(h_mbox->p_rsp != _BOSS_NULL)
   {
     *(h_mbox->p_rsp) = rsp;
     Boss_send(h_mbox->sender, BOSS_SIG_MBOX_PEND_DONE);
   }
+  _Boss_sched_free();
 }
 
 
