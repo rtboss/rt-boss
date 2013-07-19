@@ -243,13 +243,13 @@ boss_sigs_t Boss_wait(boss_sigs_t wait_sigs)
   if( (cur_tcb->sigs & wait_sigs) == 0 )  /* 실행할 시그널이 없을면 */
   {
     _Boss_sched_list_remove(cur_tcb);     /* 스케줄러 리스트에서 제거 */
-    _Boss_context_switch();               /* 문맥 전환 실행           */
   }
   BOSS_IRQ_RESTORE();
+
+  _Boss_schedule();       /* 문맥전환 실행  */
   
   return Boss_sigs_receive(wait_sigs);
 }
-
 
 
 /*===========================================================================
