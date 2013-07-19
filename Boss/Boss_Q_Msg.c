@@ -28,7 +28,7 @@
 /*===========================================================================
     B O S S _ M S G _ Q _ I N I T
 ---------------------------------------------------------------------------*/
-void Boss_msg_q_init(boss_tcb_t *p_tcb, boss_msg_q_t *msg_q, boss_sigs_t sig)
+void Boss_msg_q_init(boss_msg_q_t *msg_q, boss_tcb_t *p_tcb, boss_sigs_t sig)
 {
   BOSS_ASSERT(msg_q->owner_tcb == _BOSS_NULL);
   BOSS_ASSERT(msg_q->msg_fifo == _BOSS_NULL);

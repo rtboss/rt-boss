@@ -34,7 +34,7 @@ typedef struct {
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void Boss_msg_q_init(boss_tcb_t *p_tcb, boss_msg_q_t *msg_q, boss_sigs_t sig);
+void Boss_msg_q_init(boss_msg_q_t *msg_q, boss_tcb_t *p_tcb, boss_sigs_t sig);
 void Boss_msg_send(boss_msg_q_t *msg_q, msg_cmd_t m_cmd, boss_uptr_t param);
 msg_cmd_t Boss_msg_receive(boss_msg_q_t *msg_q, boss_uptr_t *p_param);
 
