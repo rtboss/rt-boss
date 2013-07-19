@@ -14,201 +14,169 @@
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
 /*---------------------------------------------------------------------------*/
-
+#define _TRIMER_ACT_FIRST_PREV    ((boss_tmr_t *)(0xFFFFFFFF))
+#define _TRIMER_EXE_FIRST_PREV    ((boss_tmr_t *)(0xFFFFFFFE))
 
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
-/*static*/ boss_tmr_t   *_boss_timer_list = _BOSS_NULL; /* 카운트할 타이머 리스트 */
+/*static*/ boss_tmr_t *_boss_timer_act_list = _BOSS_NULL; /* Active Timer list */
+/*static*/ boss_tmr_t *_boss_timer_exe_list = _BOSS_NULL; /* Execute Timer list*/
+
+boss_tcb_t *_p_tmr_cb_tcb = _BOSS_NULL;
+boss_sigs_t _tmr_cb_sig   = 0;
+
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
+
+
+/*===========================================================================
+    _   B O S S _ T I M E R _ C B _ T A S K _ S E T
+---------------------------------------------------------------------------*/
+void _Boss_timer_cb_task_set(boss_tcb_t *p_cb_tcb, boss_sigs_t cb_sig)
+{
+  BOSS_IRQ_DISABLE();
+  _p_tmr_cb_tcb = p_cb_tcb;
+  _tmr_cb_sig   = cb_sig;
+  BOSS_IRQ_RESTORE();
+}
+
 
 /*===========================================================================
     _   B O S S _ T I M E R _ T I C K
 ---------------------------------------------------------------------------*/
 void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
 {
-  boss_tmr_t  *p_prev;
   boss_tmr_t  *p_tmr;
-  boss_tmr_t  *p_done_list = _BOSS_NULL;
   
   BOSS_IRQ_DISABLE();
-  p_prev  = _BOSS_NULL;
-  p_tmr   = _boss_timer_list;
-  
+  p_tmr = _boss_timer_act_list;
+
   while(p_tmr != _BOSS_NULL)
-  {    
+  {
     if(tick_ms < p_tmr->tmr_ms)
     {
       p_tmr->tmr_ms = p_tmr->tmr_ms - tick_ms;
-      
-      p_prev  = p_tmr;
-      p_tmr   = p_tmr->next;
+      p_tmr = p_tmr->next;
     }
-    else  /* 타이머 완료 */
+    else  /* Timer done */
     {
-      boss_tmr_t  *p_done;
-      
-      if(p_prev == _BOSS_NULL) {
-        _boss_timer_list = p_tmr->next;
+      boss_tmr_t  *p_done = p_tmr;
+      p_tmr = p_tmr->next;
+
+      /* Remove Active list */
+      if(p_done->prev == _TRIMER_ACT_FIRST_PREV) {
+        _boss_timer_act_list = p_done->next;
       } else {
-        p_prev->next = p_tmr->next;
+        p_done->prev->next = p_done->next;
       }
       
-      p_done  = p_tmr;
-      p_tmr   = p_tmr->next;
-      
-      p_done->next = p_done_list;
-      p_done_list = p_done;
+      if(p_done->next != _BOSS_NULL) {
+        p_done->next->prev = p_done->prev;
+      }
+
+      /* Insert Execute list */
+      p_done->prev = _TRIMER_EXE_FIRST_PREV;
+      p_done->next = _BOSS_NULL;
+
+      if(_boss_timer_exe_list != _BOSS_NULL) {
+        _boss_timer_exe_list->prev = p_done;
+        p_done->next = _boss_timer_exe_list;
+      }
+      _boss_timer_exe_list = p_done;
     }
   }
   BOSS_IRQ_RESTORE();
 
-  while(p_done_list != _BOSS_NULL)        /* 완료 타이머 처리 */
+  if(_boss_timer_exe_list != _BOSS_NULL)
   {
-    boss_tmr_cb_t callback;
-    boss_tmr_t    *p_done;
-    
-    p_done = p_done_list;
-    p_done_list = p_done->next;
-    
-    if(p_done->sig != 0) {                /* 시그널 처리 */
-      Boss_send(p_done->p_tcb, p_done->sig);
-    }
-
-    callback = p_done->callback;
-
-    if(p_done->rpt_ms != 0)                /* 반복 타이머 재등록 */
-    {
-      p_done->tmr_ms = p_done->rpt_ms;
-      BOSS_IRQ_DISABLE();
-      p_done->next = _boss_timer_list;
-      _boss_timer_list = p_done;
-      BOSS_IRQ_RESTORE();
-    }
-    else
-    {
-      Boss_mfree(p_done);
-    }
-
-    if(callback != _BOSS_NULL) {        /* 콜백 함수 실행 */
-      callback();
+    if(_p_tmr_cb_tcb != _BOSS_NULL) {
+      Boss_send(_p_tmr_cb_tcb, _tmr_cb_sig);
+    } else {
+      _Boss_timer_callback_execute();
     }
   }
 }
 
 
+/*===========================================================================
+    _   B O S S _ T I M E R _ C A L L B A C K _ E X E C U T E
+---------------------------------------------------------------------------*/
+void _Boss_timer_callback_execute(void)
+{
+  while(_boss_timer_exe_list != _BOSS_NULL)
+  {
+    boss_tmr_t  *p_done;
+    tmr_cb_t    callback;
+    
+    BOSS_IRQ_DISABLE();
+    p_done = _boss_timer_exe_list;
+    _boss_timer_exe_list = _boss_timer_exe_list->next;
+    if(_boss_timer_exe_list != _BOSS_NULL) {
+      _boss_timer_exe_list->prev = _TRIMER_EXE_FIRST_PREV;
+    }
+    p_done->prev = _BOSS_NULL;
+    p_done->next = _BOSS_NULL;
+    callback = p_done->tmr_cb;
+    BOSS_IRQ_RESTORE();
+
+    callback(p_done);   // Callback Execute
+  }
+}
+
 
 /*===========================================================================
     B O S S _ T M R _ S T A R T
 ---------------------------------------------------------------------------*/
-boss_tmr_t *Boss_tmr_start( boss_tcb_t *p_tcb, boss_sigs_t sig,
-            boss_tmr_ms_t tmr_ms, boss_tmr_ms_t rpt_ms, boss_tmr_cb_t callback )
+void Boss_tmr_start(boss_tmr_t *p_tmr, boss_tmr_ms_t tmr_ms, tmr_cb_t callback)
 {
-  boss_tmr_t *p_tmr;
-
-  BOSS_ASSERT(p_tcb != _BOSS_NULL);
-
-  p_tmr = Boss_malloc(sizeof(boss_tmr_t));
-
-  p_tmr->p_tcb  = p_tcb;
-  p_tmr->sig    = sig;
-
+  if(p_tmr->prev != _BOSS_NULL) {
+      Boss_tmr_stop(p_tmr);
+  }
+  
   p_tmr->tmr_ms = tmr_ms;
-  p_tmr->rpt_ms = rpt_ms;
-
-  p_tmr->callback = callback;
+  p_tmr->tmr_cb = callback;
+  
+  p_tmr->prev = _TRIMER_ACT_FIRST_PREV;
+  p_tmr->next = _BOSS_NULL;
 
   BOSS_IRQ_DISABLE();
-  p_tmr->next = _boss_timer_list;         /* 타이머 추가 */
-  _boss_timer_list = p_tmr;
-  
-  Boss_sigs_clear(p_tcb, sig);
+  if(_boss_timer_act_list != _BOSS_NULL)
+  {
+    BOSS_ASSERT(_boss_timer_act_list->prev == _TRIMER_ACT_FIRST_PREV);
+    
+    _boss_timer_act_list->prev = p_tmr;
+    p_tmr->next = _boss_timer_act_list;
+  }
+  _boss_timer_act_list = p_tmr;
   BOSS_IRQ_RESTORE();
-
-  return p_tmr;
 }
 
 
 /*===========================================================================
     B O S S _ T M R _ S T O P
 ---------------------------------------------------------------------------*/
-boss_reg_t Boss_tmr_stop(boss_tmr_t *p_tmr)
+void Boss_tmr_stop(boss_tmr_t *p_tmr)
 {
-  boss_tmr_t *p_prev;
-  boss_tmr_t *p_find;
-
   BOSS_IRQ_DISABLE();
-  p_prev = _BOSS_NULL;
-  p_find = _boss_timer_list;
-  while( (p_find != _BOSS_NULL) && (p_find != p_tmr) )
+  if(p_tmr->prev != _BOSS_NULL)
   {
-    p_prev = p_find;
-    p_find = p_find->next;
-  }
-
-  if(p_find != _BOSS_NULL)        /* 타이머 제거 */
-  {
-    if(p_prev == _BOSS_NULL) {
-      _boss_timer_list = p_find->next;
+    if(p_tmr->prev == _TRIMER_ACT_FIRST_PREV) {
+      _boss_timer_act_list = _boss_timer_act_list->next;
+    } else if(p_tmr->prev == _TRIMER_EXE_FIRST_PREV) {
+      _boss_timer_exe_list = _boss_timer_exe_list->next;
     } else {
-      p_prev->next = p_find->next;
-    }
-  }
-  BOSS_IRQ_RESTORE();
-  
-  if(p_find != _BOSS_NULL) {
-    Boss_mfree(p_find);
-    return _BOSS_TRUE;
-  }
-
-  return _BOSS_FALSE;
-}
-
-
-/*===========================================================================
-    B O S S _ T M R _ C A N C E L
----------------------------------------------------------------------------*/
-boss_reg_t Boss_tmr_cancel(boss_tcb_t *p_tcb, boss_sigs_t sig,
-                                                        boss_tmr_cb_t callback)
-{
-  boss_tmr_t *p_prev;
-  boss_tmr_t *p_find;
-
-  BOSS_IRQ_DISABLE();
-  p_prev = _BOSS_NULL;
-  p_find = _boss_timer_list;
-  
-  while( p_find != _BOSS_NULL )
-  {
-    if( (p_find->p_tcb == p_tcb) && (p_find->sig == sig) 
-                    && (p_find->callback == callback) )
-    {
-      break;
+      p_tmr->prev->next = p_tmr->next;
     }
     
-    p_prev = p_find;
-    p_find = p_find->next;
-  }
-  
-  if(p_find != _BOSS_NULL)        /* 타이머 제거 */
-  {
-    if(p_prev == _BOSS_NULL) {
-      _boss_timer_list = p_find->next;
-    } else {
-      p_prev->next = p_find->next;
+    if(p_tmr->next != _BOSS_NULL) {
+      p_tmr->next->prev = p_tmr->prev;
     }
   }
+  p_tmr->prev = _BOSS_NULL;
   BOSS_IRQ_RESTORE();
-
-  if(p_find != _BOSS_NULL) {
-    Boss_mfree(p_find);
-    return _BOSS_TRUE;
-  }
-
-  return _BOSS_FALSE;
 }
 
 
@@ -217,9 +185,24 @@ boss_reg_t Boss_tmr_cancel(boss_tcb_t *p_tcb, boss_sigs_t sig,
 ---------------------------------------------------------------------------*/
 void Boss_sleep(boss_tmr_ms_t wait_ms)
 {
-  Boss_tmr_start(Boss_self(), BOSS_SIG_SLEEP, wait_ms, _BOSS_FALSE, _BOSS_NULL);
+  (void)Boss_wait_sleep( (boss_sigs_t)0, wait_ms);
+}
 
-  Boss_wait(BOSS_SIG_SLEEP);
+/* Sleep Timer */
+typedef struct {
+  boss_tmr_t  tmr;
+  boss_tcb_t  *p_tcb;
+} _sleep_tmr_t;
+
+
+/*===========================================================================
+    _ S L E E P _ C A L L B A C K
+---------------------------------------------------------------------------*/
+void _sleep_callback(boss_tmr_t *p_tmr)
+{
+  _sleep_tmr_t *p_sleep_tmr = (_sleep_tmr_t *)p_tmr;
+
+  Boss_send(p_sleep_tmr->p_tcb, BOSS_SIG_SLEEP);
 }
 
 
@@ -228,15 +211,21 @@ void Boss_sleep(boss_tmr_ms_t wait_ms)
 ---------------------------------------------------------------------------*/
 boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms)
 {
-  boss_sigs_t recv_sigs;
+  boss_sigs_t   recv_sigs;
+  _sleep_tmr_t  sleep_tmr;
+
+  sleep_tmr.tmr.prev  = _BOSS_NULL;
+  sleep_tmr.p_tcb     = Boss_self();
   
-  Boss_tmr_start(Boss_self(), BOSS_SIG_SLEEP, wait_ms, _BOSS_FALSE, _BOSS_NULL);
+  Boss_tmr_start((boss_tmr_t *)&sleep_tmr, wait_ms, _sleep_callback);
 
   recv_sigs = Boss_wait(wait_sigs | BOSS_SIG_SLEEP);
 
   if( (recv_sigs & BOSS_SIG_SLEEP) == 0 ) {
-    Boss_tmr_cancel(Boss_self(), BOSS_SIG_SLEEP, _BOSS_NULL);
+    Boss_tmr_stop((boss_tmr_t *)&sleep_tmr);
   }
+  
+  recv_sigs = recv_sigs & ~BOSS_SIG_SLEEP;   /* BOSS_SIG_SLEEP 시그널 클리어 */
   
   return recv_sigs;
 }
