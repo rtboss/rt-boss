@@ -78,7 +78,7 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
   sigs = Boss_wait_sleep(BOSS_SIG_SEM_OBTAIN, timeout);  /* 세마포어 대기  */
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
-  sigs = sigs | Boss_sigs_receive();
+  sigs = sigs | Boss_sigs_receive(BOSS_SIG_SEM_OBTAIN);
   if( sigs & BOSS_SIG_SEM_OBTAIN )                        /* 세마포어 획득  */
   {
     BOSS_ASSERT(p_sem->busy != _BOSS_FALSE);

@@ -240,8 +240,10 @@ boss_sigs_t Boss_wait(boss_sigs_t wait_sigs)
 {
   boss_tcb_t  *cur_tcb;
 
-  BOSS_ASSERT( (_BOSS_IRQ_() == 0) && (_BOSS_ISR_() == 0)
-                && (Boss_sched_locking() == 0) && (wait_sigs != 0) );
+  BOSS_ASSERT(_BOSS_IRQ_() == 0);
+  BOSS_ASSERT(_BOSS_ISR_() == 0);
+  BOSS_ASSERT(Boss_sched_locking() == 0);
+  BOSS_ASSERT(wait_sigs != 0);
   
   cur_tcb = Boss_self();
   cur_tcb->wait = wait_sigs;
@@ -254,7 +256,7 @@ boss_sigs_t Boss_wait(boss_sigs_t wait_sigs)
   }
   BOSS_IRQ_RESTORE();
   
-  return Boss_sigs_receive();
+  return Boss_sigs_receive(wait_sigs);
 }
 
 
@@ -280,13 +282,13 @@ void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs)
 /*===========================================================================
     B O S S _ S I G S _ R E C E I V E
 ---------------------------------------------------------------------------*/
-boss_sigs_t Boss_sigs_receive(void)
+boss_sigs_t Boss_sigs_receive(boss_sigs_t wait_sigs)
 {
   boss_sigs_t recv_sigs;
   boss_tcb_t  *cur_tcb = Boss_self();
   
   BOSS_IRQ_DISABLE();
-  recv_sigs     = cur_tcb->sigs & cur_tcb->wait;
+  recv_sigs     = cur_tcb->sigs & wait_sigs;
   cur_tcb->sigs = cur_tcb->sigs & ~recv_sigs;   /* 수신한 시그널 클리어 */
   BOSS_IRQ_RESTORE();
   

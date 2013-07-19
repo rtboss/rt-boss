@@ -111,7 +111,7 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
   sigs = Boss_wait_sleep(BOSS_SIG_MBOX_PEND_DONE, timeout);   /* 대기  */
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
-  sigs = sigs | Boss_sigs_receive();
+  sigs = sigs | Boss_sigs_receive(BOSS_SIG_MBOX_PEND_DONE);
   if(sigs & BOSS_SIG_MBOX_PEND_DONE)  /* 처리 완료 */
   {
     BOSS_IRQ_RESTORE_SR(irq_storage);

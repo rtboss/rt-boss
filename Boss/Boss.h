@@ -87,7 +87,7 @@ boss_tcb_t *Boss_self(void);
 boss_sigs_t Boss_wait(boss_sigs_t wait_sigs);
 void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 void Boss_sigs_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-boss_sigs_t Boss_sigs_receive(void);
+boss_sigs_t Boss_sigs_receive(boss_sigs_t wait_sigs);
 
 void Boss_task_create( void (*task)(void *p_arg), void *p_arg, 
                         boss_tcb_t *p_tcb, boss_prio_t prio, 
