@@ -81,31 +81,31 @@ void _Boss_spy_tick(void)
 void _Boss_spy_context(boss_tcb_t *curr_tcb, boss_tcb_t *best_tcb)
 {
   { /* [ Stack ] */
-    BOSS_ASSERT(curr_tcb->sp_base[0] == (boss_stk_t)0xEEEEEEEE);  // Stack invasion
-    while( (curr_tcb->sp_peak[-1] != (boss_stk_t)0xEEEEEEEE) 
-        || (curr_tcb->sp_peak[-2] != (boss_stk_t)0xEEEEEEEE)
-        || (curr_tcb->sp_peak[-3] != (boss_stk_t)0xEEEEEEEE)
-        || (curr_tcb->sp_peak[-4] != (boss_stk_t)0xEEEEEEEE) )
+    BOSS_ASSERT(curr_tcb->ex.sp_base[0] == (boss_stk_t)0xEEEEEEEE);  // Stack invasion
+    while( (curr_tcb->ex.sp_peak[-1] != (boss_stk_t)0xEEEEEEEE) 
+        || (curr_tcb->ex.sp_peak[-2] != (boss_stk_t)0xEEEEEEEE)
+        || (curr_tcb->ex.sp_peak[-3] != (boss_stk_t)0xEEEEEEEE)
+        || (curr_tcb->ex.sp_peak[-4] != (boss_stk_t)0xEEEEEEEE) )
     {
-      curr_tcb->sp_peak--;
-      BOSS_ASSERT(curr_tcb->sp_peak > curr_tcb->sp_base);   // Stack overflow
+      curr_tcb->ex.sp_peak--;
+      BOSS_ASSERT(curr_tcb->ex.sp_peak > curr_tcb->ex.sp_base);   // Stack overflow
     }
   }
 
   { /* [ C P U ] */
     boss_u32_t now_us = _Boss_spy_elapse_us();
 
-    if( now_us < curr_tcb->cpu_ent_us ) {       /* Tick Timer Pend */
+    if( now_us < curr_tcb->ex.cpu_ent_us ) {       /* Tick Timer Pend */
       now_us = now_us + ((boss_u32_t)_BOSS_TICK_MS_ * (boss_u32_t)1000);
-      BOSS_ASSERT(now_us >= curr_tcb->cpu_ent_us);
+      BOSS_ASSERT(now_us >= curr_tcb->ex.cpu_ent_us);
     }
     
-    curr_tcb->cpu_sum_us += now_us - curr_tcb->cpu_ent_us;
-    best_tcb->cpu_ent_us = now_us;
+    curr_tcb->ex.cpu_sum_us += now_us - curr_tcb->ex.cpu_ent_us;
+    best_tcb->ex.cpu_ent_us = now_us;
   }
   
   /* [ Context Switch Number ] */
-  best_tcb->context++;
+  best_tcb->ex.context++;
   
   
   /* [ ARM Cortex-Mx MSP (Main Stack Pointer) ] */
@@ -148,17 +148,17 @@ void _Boss_spy_setup(boss_tcb_t *p_tcb, boss_stk_t *sp_base, boss_uptr_t bytes)
       sp_base[i] = (boss_stk_t)0xEEEEEEEE;  // ½ºÅÃ [E] empty
     }
     
-    p_tcb->sp_base  = &sp_base[0];
-    p_tcb->sp_peak  = &sp_base[size-1];
-    p_tcb->sp_limit = &sp_base[size];
+    p_tcb->ex.sp_base  = &sp_base[0];
+    p_tcb->ex.sp_peak  = &sp_base[size-1];
+    p_tcb->ex.sp_limit = &sp_base[size];
   }
 
   /* [ C P U ] */
-  p_tcb->cpu_ent_us = 0;
-  p_tcb->cpu_sum_us = 0;
+  p_tcb->ex.cpu_ent_us = 0;
+  p_tcb->ex.cpu_sum_us = 0;
 
   /* [ Context Switch Number ] */
-  p_tcb->context = 0;
+  p_tcb->ex.context = 0;
 }
 
 
@@ -176,9 +176,9 @@ void Boss_spy_restart(void)
   {
     if(_spy_tcb_tbl[idx] != _BOSS_NULL)
     {
-      _spy_tcb_tbl[idx]->cpu_ent_us = 0;
-      _spy_tcb_tbl[idx]->cpu_sum_us = 0;
-      _spy_tcb_tbl[idx]->context    = 0;
+      _spy_tcb_tbl[idx]->ex.cpu_ent_us = 0;
+      _spy_tcb_tbl[idx]->ex.cpu_sum_us = 0;
+      _spy_tcb_tbl[idx]->ex.context    = 0;
     }
   }
   BOSS_IRQ_RESTORE();
@@ -206,8 +206,8 @@ void Boss_spy_report(void)
   _spy_elapse_us = 0;
   
   curr_tcb = Boss_self();
-  curr_tcb->cpu_sum_us += total_us - curr_tcb->cpu_ent_us;
-  curr_tcb->cpu_ent_us = 0;
+  curr_tcb->ex.cpu_sum_us += total_us - curr_tcb->ex.cpu_ent_us;
+  curr_tcb->ex.cpu_ent_us = 0;
   BOSS_IRQ_RESTORE();
   
   for(idx = 0; idx < _BOSS_SPY_TCB_MAX; idx++)
@@ -223,8 +223,8 @@ void Boss_spy_report(void)
         boss_uptr_t stk_used;
         boss_reg_t  stk_pct;
         
-        stk_total = (boss_uptr_t)p_tcb->sp_limit - (boss_uptr_t)p_tcb->sp_base;
-        stk_used  = (boss_uptr_t)p_tcb->sp_limit - (boss_uptr_t)p_tcb->sp_peak;
+        stk_total = (boss_uptr_t)p_tcb->ex.sp_limit - (boss_uptr_t)p_tcb->ex.sp_base;
+        stk_used  = (boss_uptr_t)p_tcb->ex.sp_limit - (boss_uptr_t)p_tcb->ex.sp_peak;
         stk_pct = (boss_reg_t)(((boss_u32_t)stk_used * 100) / (boss_u32_t)stk_total);
         
         PRINTF("\t  %2d%%(%3d/%3d)", stk_pct, stk_used, stk_total);
@@ -233,20 +233,20 @@ void Boss_spy_report(void)
       { /* [ C P U ] */
         boss_u32_t cpu_pct = 0;     /* percent XX.xxx % */
         
-        if(p_tcb->cpu_sum_us != 0)
+        if(p_tcb->ex.cpu_sum_us != 0)
         {
-          cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->cpu_sum_us) * (boss_u64_t)100000)
+          cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->ex.cpu_sum_us) * (boss_u64_t)100000)
                                                       / (boss_u64_t)total_us);
-          p_tcb->cpu_sum_us = 0;
+          p_tcb->ex.cpu_sum_us = 0;
         }
         
         PRINTF("\t %2d.%03d%%", (int)(cpu_pct/1000), (int)(cpu_pct%1000));
         cpu_pct_sum = cpu_pct_sum  + cpu_pct;
       }
       
-      PRINTF("   %7d\n", p_tcb->context);
-      context_sum = context_sum + p_tcb->context;
-      p_tcb->context = 0;
+      PRINTF("   %7d\n", p_tcb->ex.context);
+      context_sum = context_sum + p_tcb->ex.context;
+      p_tcb->ex.context = 0;
     }
   }
 

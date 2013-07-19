@@ -9,6 +9,16 @@
 */
 
 /*===========================================================================*/
+/*                           RT-BOSS 사용자 설정                             */
+/*---------------------------------------------------------------------------*/
+#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
+#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
+
+#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
+#define _BOSS_SPY_                      /* Stack, CPU, Context Switch */
+#define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
+
+/*===========================================================================*/
 /*                            RT-BOSS 데이터형                               */
 /*---------------------------------------------------------------------------*/
 typedef unsigned char       boss_u08_t;       /* unsigned  8bit 데이터형 */
@@ -25,6 +35,22 @@ typedef boss_u16_t          boss_sigs_t;      /* 시그널                 */
 typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
 
 typedef boss_u08_t          boss_align_t;     /* 메모리 정렬            */
+
+/*===========================================================================*/
+/*                           TCB Extend                                      */
+/*---------------------------------------------------------------------------*/
+#ifdef _BOSS_SPY_
+#define _BOSS_TCB_EXTEND_
+typedef struct {
+  boss_stk_t    *sp_base;
+  boss_stk_t    *sp_peak;
+  boss_stk_t    *sp_limit;
+
+  boss_u32_t    cpu_ent_us;
+  boss_u32_t    cpu_sum_us;     /* Task run-time sum (us) */
+  boss_uptr_t   context;      /* Context Switch Number  */
+} _boss_tcb_ex_t;
+#endif 
 
 /*===========================================================================*/
 /*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
@@ -54,17 +80,6 @@ typedef boss_u08_t          boss_align_t;     /* 메모리 정렬            */
 boss_reg_t _mcu_isr_(void);
 void _mcu_isr_begin(void);
 void _mcu_isr_finis(void);
-
-
-/*===========================================================================*/
-/*                           RT-BOSS 사용자 설정                             */
-/*---------------------------------------------------------------------------*/
-#define _BOSS_TCB_NAME_SIZE     8       /* TCB Name */
-#define _BOSS_SPY_                      /* Stack 검사 */
-#define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
-
-#define _BOSS_TICK_MS_          10      /* Tick (ms)  */
-#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
 
 
 /*===========================================================================*/

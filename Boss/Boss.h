@@ -52,19 +52,12 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
   
   boss_stk_t        *sp;                  /* Task Stack Point */
   
-  #ifdef _BOSS_SPY_
-  boss_stk_t    *sp_base;
-  boss_stk_t    *sp_peak;     
-  boss_stk_t    *sp_limit;
-  
-  boss_u32_t    cpu_ent_us;   /* Task enter time        */
-  boss_u32_t    cpu_sum_us;   /* Task run-time sum      */
-  
-  boss_uptr_t   context;      /* Context Switch Number  */
-  #endif
-  
   #ifdef _BOSS_TCB_NAME_SIZE
-  char          name[_BOSS_TCB_NAME_SIZE];  /* TCB Name */
+  char        name[_BOSS_TCB_NAME_SIZE];  /* TCB Name */
+  #endif
+
+  #ifdef _BOSS_TCB_EXTEND_
+  _boss_tcb_ex_t          ex;             /* TCB Extend     */
   #endif
 } boss_tcb_t;
 

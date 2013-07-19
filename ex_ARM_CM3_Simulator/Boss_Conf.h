@@ -36,6 +36,23 @@ typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
 
 typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 
+
+/*===========================================================================*/
+/*                           TCB Extend                                      */
+/*---------------------------------------------------------------------------*/
+#ifdef _BOSS_SPY_
+#define _BOSS_TCB_EXTEND_
+typedef struct {
+  boss_stk_t    *sp_base;
+  boss_stk_t    *sp_peak;
+  boss_stk_t    *sp_limit;
+
+  boss_u32_t    cpu_ent_us;
+  boss_u32_t    cpu_sum_us;     /* Task run-time sum (us) */
+  boss_uptr_t   context;      /* Context Switch Number  */
+} _boss_tcb_ex_t;
+#endif 
+
 /*===========================================================================*/
 /*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
 /*---------------------------------------------------------------------------*/
