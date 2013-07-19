@@ -38,13 +38,13 @@ typedef struct _boss_mem_info_struct {
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
-boss_mem_align_t _memory_pool[_BOSS_MEM_POOL_SIZE / sizeof(boss_mem_align_t)];
+boss_align_t _memory_pool[_BOSS_MEM_POOL_SIZE / sizeof(boss_align_t)];
 
 #ifdef _BOSS_MEM_INFO_
 _boss_mem_info_t _boss_mem_info;
 #endif
 
-#define _ALIGN_SIZE                 (boss_uptr_t)(sizeof(boss_mem_align_t))
+#define _ALIGN_SIZE                 (boss_uptr_t)(sizeof(boss_align_t))
 
 #define _MEM_POOL_START   (void *)_memory_pool
 #define _MEM_POOL_END     (void *)((boss_uptr_t)_memory_pool+sizeof(_memory_pool))

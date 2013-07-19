@@ -24,7 +24,7 @@ typedef boss_u32_t          boss_stk_t;       /* 스택                   */
 typedef boss_u32_t          boss_sigs_t;      /* 시그널                 */
 typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
 
-typedef boss_u64_t          boss_mem_align_t; /* 메모리 정렬            */
+typedef boss_u64_t          boss_align_t;     /* 메모리 정렬            */
 
 /*===========================================================================*/
 /*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */

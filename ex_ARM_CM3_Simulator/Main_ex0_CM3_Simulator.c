@@ -27,8 +27,8 @@ void Boss_device_init(void);
 /*===========================================================================
     [ A A _ T A S K ]
 ---------------------------------------------------------------------------*/
-boss_tcb_t        aa_tcb;
-boss_mem_align_t  aa_stk[ 512 / sizeof(boss_mem_align_t) ];   /* 512 bytes */
+boss_tcb_t    aa_tcb;
+boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
 
 /*===============================================
     A A _ M A I N
@@ -50,8 +50,8 @@ void aa_main(void *p_arg)
 /*===========================================================================
     [ B B _ T A S K ]
 ---------------------------------------------------------------------------*/
-boss_tcb_t        bb_tcb;
-boss_mem_align_t  bb_stk[ 512 / sizeof(boss_mem_align_t) ];   /* 512 bytes */
+boss_tcb_t    bb_tcb;
+boss_align_t  bb_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
 
 /*===============================================
     B B _ M A I N
@@ -83,8 +83,8 @@ void bb_main(void *p_arg)
 *                         RT-BOSS ( IDLE TASK )                               *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
-boss_tcb_t        idle_tcb;
-boss_mem_align_t  idle_stack[ 128 / sizeof(boss_mem_align_t) ]; /* 128 bytes */
+boss_tcb_t    idle_tcb;
+boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
 
 /*===========================================================================
     I D L E _ M A I N
