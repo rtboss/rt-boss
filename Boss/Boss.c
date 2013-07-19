@@ -14,7 +14,7 @@
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
 /*---------------------------------------------------------------------------*/
-#define _SCHED_LOCKING_MAX         10
+
 
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
@@ -256,7 +256,7 @@ boss_sigs_t Boss_wait(boss_sigs_t wait_sigs)
     B O S S _ S E N D
 ---------------------------------------------------------------------------*/
 void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs)
-{  
+{
   BOSS_IRQ_DISABLE();
   p_tcb->sigs = p_tcb->sigs | sigs;
 
@@ -374,8 +374,6 @@ void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio)
 ---------------------------------------------------------------------------*/
 void _Boss_sched_lock(void)
 {
-  BOSS_ASSERT(_sched_locking < _SCHED_LOCKING_MAX);
-  
   BOSS_IRQ_DISABLE();
   _sched_locking++;
   BOSS_IRQ_RESTORE();
