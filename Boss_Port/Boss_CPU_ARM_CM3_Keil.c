@@ -185,15 +185,12 @@ __ASM void PendSV_Handler(void)
   STMDB   R0!, {R4-R11}   // R4-R11 저장
   MOV     R4, LR          // LR 임시저장 (BL 사용을 위해)
 
-  CPSID   I                   /* [ IRQ 비활성화 ] */
   /*
   ** void *_Boss_switch_current_tcb(void *cur_task_sp)
   ** 매개변수 : "R0"는 실행중인 태스크 스택 포인터
   ** 리턴값   : "R0"는 실행할 태스크 스택 포인터
   */
   BL      _Boss_switch_current_tcb
-
-  CPSIE   I                   /* [ IRQ 활성화 ]   */
 
   MOV     LR, R4          // LR 임시저장 (복원)
   LDMIA   R0!, {R4-R11}   // R4-R11 복원

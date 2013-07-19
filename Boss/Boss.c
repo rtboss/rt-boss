@@ -139,7 +139,9 @@ boss_stk_t *_Boss_switch_current_tcb(boss_stk_t *cur_task_sp)
   _Boss_spy_context(_current_tcb, _sched_tcb_list);
   #endif
   
+  BOSS_IRQ_DISABLE();
   _current_tcb = _sched_tcb_list;       /* Current TCB 변경 */
+  BOSS_IRQ_RESTORE();
   
   cur_task_sp = _current_tcb->sp;       /* 실행할 Task SP   */
   
