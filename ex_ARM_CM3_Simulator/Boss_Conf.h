@@ -9,6 +9,16 @@
 */
 
 /*===========================================================================*/
+/*                           RT-BOSS 사용자 설정                             */
+/*---------------------------------------------------------------------------*/
+#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
+#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
+
+#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
+#define _BOSS_SPY_                      /* Stack, CPU, Context Switch */
+#define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
+
+/*===========================================================================*/
 /*                            RT-BOSS 데이터형                               */
 /*---------------------------------------------------------------------------*/
 typedef unsigned char       boss_u08_t;       /* unsigned  8bit 데이터형 */
@@ -24,7 +34,7 @@ typedef boss_u32_t          boss_stk_t;       /* 스택                   */
 typedef boss_u32_t          boss_sigs_t;      /* 시그널                 */
 typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
 
-typedef boss_u64_t          boss_align_t;     /* 메모리 정렬            */
+typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 
 /*===========================================================================*/
 /*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
@@ -43,24 +53,13 @@ typedef boss_u64_t          boss_align_t;     /* 메모리 정렬            */
 #define BOSS_IRQ_RESTORE_SR( _sr_ )     do { __set_PRIMASK(_sr_); } while(0)
 
 /*----------------------------------------------------------------------*/
-#define _BOSS_IRQ_()        __get_PRIMASK() /* 0 = Enable / !0 = Disable */
+#define _BOSS_IRQ_()        __get_PRIMASK() /* 0 = Enable / 0 != Disable */
 
-#define _BOSS_ISR_()        __get_IPSR()    /* !0 = ISR Active  */
+#define _BOSS_ISR_()        __get_IPSR()    /* 0 != ISR Active  */
 
 /*----------------------------------------------------------------------*/
 #define _BOSS_ISR_BEGIN()      do { _Boss_sched_lock()
 #define _BOSS_ISR_FINIS()      _Boss_sched_free(); } while(0)
-
-
-/*===========================================================================*/
-/*                           RT-BOSS 사용자 설정                             */
-/*---------------------------------------------------------------------------*/
-#define _BOSS_TCB_NAME_SIZE     8       /* TCB Name */
-#define _BOSS_SPY_                      /* Stack 검사 */
-#define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
-
-#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
-#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
 
 
 /*===========================================================================*/
