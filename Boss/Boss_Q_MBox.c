@@ -80,7 +80,7 @@ void Boss_mbox_send(boss_mbox_q_t *mbox_q, void *p_mbox)
   _mbox_head_t  *h_mbox = ((_mbox_head_t *)p_mbox) - 1;
 
   BOSS_ASSERT(h_mbox->sender == _BOSS_NULL);
-  BOSS_ASSERT(h_mbox->p_rsp == _BOSS_NULL);
+  BOSS_ASSERT(h_mbox->p_rsp == _BOSS_NULL);       /* MBox Send */
 
   _Boss_mbox_insert(mbox_q, h_mbox);
   
@@ -100,15 +100,22 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
 
   BOSS_ASSERT(mbox_q->owner_tcb != _BOSS_NULL);
   BOSS_ASSERT(mbox_q->owner_tcb != Boss_self());
-  BOSS_ASSERT(p_rsp != _BOSS_NULL);
+  BOSS_ASSERT(p_rsp != _BOSS_NULL);                   /* MBox Pend */
   
   h_mbox->p_rsp = p_rsp;
   h_mbox->sender = Boss_self();
   Boss_sigs_clear(Boss_self(), BOSS_SIG_MBOX_PEND_DONE);
   _Boss_mbox_insert(mbox_q, h_mbox);
   Boss_send(mbox_q->owner_tcb, mbox_q->mbox_sig);
-  
-  sigs = Boss_wait_sleep(BOSS_SIG_MBOX_PEND_DONE, timeout);   /* 대기  */
+
+  if( timeout == 0 )                          /* 대기 (타임아웃 사용안함) */
+  {
+    (void)Boss_wait(BOSS_SIG_MBOX_PEND_DONE);
+    
+    return _BOSS_SUCCESS;
+  }
+                                                  /* 대기 (타임아웃 사용) */
+  sigs = Boss_wait_sleep(BOSS_SIG_MBOX_PEND_DONE, timeout);
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
   sigs = sigs | Boss_sigs_receive(BOSS_SIG_MBOX_PEND_DONE);
@@ -117,7 +124,8 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
     BOSS_IRQ_RESTORE_SR(irq_storage);
     return _BOSS_SUCCESS;
   }
-  
+
+  BOSS_ASSERT(sigs == 0);              /* 타임아웃 */
   if(h_mbox->state == _MBOX_EXECUTE)    /* 처리 중 완료 까지 대기  */
   {
     BOSS_IRQ_RESTORE_SR(irq_storage);
