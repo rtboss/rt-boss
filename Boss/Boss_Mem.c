@@ -163,7 +163,7 @@ void Boss_mfree(void *p)
   p_free = (_boss_mem_blk_t *)( (boss_uptr_t)p - sizeof(_boss_mem_blk_t) );
 
   BOSS_ASSERT( p_free->in_use == _MEM_MAGIC_CODE_ );
-  BOSS_ASSERT( (_MEM_POOL_START <= p_free) && (p_free < _MEM_POOL_END) );  
+  BOSS_ASSERT( (_MEM_POOL_START <= (void *)p_free) && ((void *)p_free < _MEM_POOL_END) );  
 
 
 
