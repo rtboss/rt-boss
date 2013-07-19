@@ -13,7 +13,9 @@
                   |------------|
                   | 하위  번지 |
                   |############|------------------------+
-                  | 0xEEEEEEEE | <- sp_base             |
+                  | 0xEEEEEEEE | <- sp_base[0]          |
+                  | 0xEEEEEEEE | <- sp_base[1]          |
+                  |============|                        |
                   | 0xEEEEEEEE |                        |
                   | 0xEEEEEEEE |                        |
                   | 0xEEEEEEEE |                        |
@@ -55,13 +57,16 @@
                   |------------|                        |
                   |     R12    |                        |
                   |------------|                        |
-                  |     LR     |                        |
+                  |   LR(exit) |                        |
                   |------------|                        |
                   |  PC(Entry) |                        |
                   |------------|                        |
                   |     PSR    |                        |
+                  |============|                        |
+                  | 0xEEEEEEEE | <-  sp_limit[-2]       |
+                  | 0xEEEEEEEE | <-  sp_limit[-1]       |
                   |############|------------------------+
-                  | 상위  번지 | <- sp_limit
+                  | 상위  번지 | <- sp_limit == sp_base[size]
                   |------------|
 */
 
@@ -71,36 +76,56 @@
 #include "Boss.h"
 
 /*===========================================================================*/
-/*                      DEFINITIONS & TYPEDEFS & MACROS                      */
+/*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
+void _Boss_task_exit(int exit_code);
+
 
 /*===========================================================================
     _ B O S S _ S T K _ I N I T
 ---------------------------------------------------------------------------*/
-boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
+boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
                                 boss_stk_t *sp_base,  boss_uptr_t stk_bytes)
 {
   boss_uptr_t size  = stk_bytes / sizeof(boss_stk_t);
   boss_stk_t  *sp   = &sp_base[size]; /* FD(Full Descending) Stack */
+
+  #ifdef _BOSS_SPY_ 
+  boss_uptr_t i;
+  for(i = 0; i < size; i++) {
+    sp_base[i] = (boss_stk_t)0xEEEEEEEE;      // 스택 [E] empty
+  }
+  sp = sp - 2;
+  #endif
+
   
-  --sp;   *sp = 0x01000000L;          /* PSR  */
-  --sp;   *sp = (boss_stk_t)task;     /* PC : Task Entry Point */
-  --sp;   *sp = 0x00000014L;          /* LR   */ 
-  --sp;   *sp = 0x00000012L;          /* R12  */
-  --sp;   *sp = 0x00000003L;          /* R3   */
-  --sp;   *sp = 0x00000002L;          /* R2   */
-  --sp;   *sp = 0x00000001L;          /* R1   */
-  --sp;   *sp = (boss_stk_t)p_arg;    /* R0 : Argument */
-  --sp;   *sp = 0x00000011L;          /* R11  */
-  --sp;   *sp = 0x00000010L;          /* R10  */
-  --sp;   *sp = 0x00000009L;          /* R9   */
-  --sp;   *sp = 0x00000008L;          /* R8   */
-  --sp;   *sp = 0x00000007L;          /* R7   */
-  --sp;   *sp = 0x00000006L;          /* R6   */
-  --sp;   *sp = 0x00000005L;          /* R5   */
-  --sp;   *sp = 0x00000004L;          /* R4   */
+  --sp;   *sp = 0x01000000L;                  /* PSR  */
+  --sp;   *sp = (boss_stk_t)task;             /* PC : Task Entry Point */
+  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR   */
+  --sp;   *sp = 0x00000012L;                  /* R12  */
+  --sp;   *sp = 0x00000003L;                  /* R3   */
+  --sp;   *sp = 0x00000002L;                  /* R2   */
+  --sp;   *sp = 0x00000001L;                  /* R1   */
+  --sp;   *sp = (boss_stk_t)p_arg;            /* R0 : Argument */
+  --sp;   *sp = 0x00000011L;                  /* R11  */
+  --sp;   *sp = 0x00000010L;                  /* R10  */
+  --sp;   *sp = 0x00000009L;                  /* R9   */
+  --sp;   *sp = 0x00000008L;                  /* R8   */
+  --sp;   *sp = 0x00000007L;                  /* R7   */
+  --sp;   *sp = 0x00000006L;                  /* R6   */
+  --sp;   *sp = 0x00000005L;                  /* R5   */
+  --sp;   *sp = 0x00000004L;                  /* R4   */
   
   return sp;
+}
+
+
+/*===========================================================================
+    _   B O S S _ S T A R T _ T C B _ S P
+---------------------------------------------------------------------------*/
+boss_stk_t *_Boss_start_tcb_sp(void)
+{
+  return (Boss_self()->sp);
 }
 
 

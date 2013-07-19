@@ -962,6 +962,9 @@
       <name>$PROJ_DIR$\..\..\Boss\Boss_Sem.c</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\..\Boss\Boss_SPY.c</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\..\Boss\Boss_Tmr.c</name>
     </file>
   </group>
