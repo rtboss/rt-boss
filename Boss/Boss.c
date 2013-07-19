@@ -58,16 +58,14 @@ static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
   _Boss_spy_setup(p_tcb, sp_base, stk_bytes);
   #endif
 
-  p_tcb->state  = _TCB_WAITING;
+  p_tcb->run_next = _BOSS_NULL;
   p_tcb->prio   = prio;
   
   p_tcb->sigs   = 0;
   p_tcb->wait   = 0;
   
   p_tcb->sp     = _Boss_stk_init(task, p_arg, sp_base, stk_bytes);  
-  
-  p_tcb->next   = _BOSS_NULL;
-  
+    
   #ifdef _BOSS_TCB_NAME_SIZE
   {
     int  i;
@@ -92,9 +90,7 @@ void Boss_init(void (*idle_task)(void *), boss_tcb_t *idle_tcb,
   _sched_locking  = 1;              /* 스케줄링 금지 */
 
   _Boss_tcb_init(idle_tcb, PRIO_BOSS_IDLE, idle_task, _BOSS_NULL,
-                                                sp_base, stk_bytes, "Idle");
-  
-  idle_tcb->state = _TCB_LISTING;
+                                                sp_base, stk_bytes, "Idle");  
   _sched_tcb_list = idle_tcb;
   BOSS_IRQ_RESTORE();
 }
@@ -166,32 +162,28 @@ static void _Boss_schedule(void)
 ---------------------------------------------------------------------------*/
 static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
 {
-  BOSS_ASSERT( (_BOSS_IRQ_() != 0) && (_sched_tcb_list != _BOSS_NULL)
-            && (p_tcb->next == _BOSS_NULL) && (p_tcb->state == _TCB_WAITING) );
-  
-  if(p_tcb->prio < _sched_tcb_list->prio)
+  BOSS_IRQ_DISABLE();
+  if(p_tcb->run_next == _BOSS_NULL)
   {
-    p_tcb->next = _sched_tcb_list;
-    _sched_tcb_list = p_tcb;
-  }
-  else
-  {
-    boss_tcb_t *p_prev = _sched_tcb_list;
-    boss_tcb_t *p_next = p_prev->next;
-    
-    BOSS_ASSERT(p_next != _BOSS_NULL);
-
-    while(p_next->prio <= p_tcb->prio)
+    if(p_tcb->prio < _sched_tcb_list->prio)
     {
-      p_prev = p_next;
-      p_next = p_next->next;
-      BOSS_ASSERT(p_next != _BOSS_NULL);
+      p_tcb->run_next = _sched_tcb_list;
+      _sched_tcb_list = p_tcb;
     }
-    p_prev->next = p_tcb;
-    p_tcb->next = p_next;
+    else
+    {
+      boss_tcb_t *p_prev = _sched_tcb_list;
+
+      while(p_prev->run_next->prio <= p_tcb->prio)
+      {
+        p_prev = p_prev->run_next;
+      }
+
+      p_tcb->run_next   = p_prev->run_next;
+      p_prev->run_next  = p_tcb;
+    }
   }
-  
-  p_tcb->state = _TCB_LISTING;        /* 스케줄러 리스트에 추가됨 */
+  BOSS_IRQ_RESTORE();
 }
 
 
@@ -200,29 +192,28 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
 ---------------------------------------------------------------------------*/
 static void _Boss_sched_list_remove(boss_tcb_t *p_tcb)
 {
-  BOSS_ASSERT( (_BOSS_IRQ_() != 0) && (p_tcb->next != _BOSS_NULL)
-                && (p_tcb->state == _TCB_LISTING) );
-  
-  if(_sched_tcb_list == p_tcb)
+  BOSS_IRQ_DISABLE();
+  if(p_tcb->run_next != _BOSS_NULL)
   {
-    _sched_tcb_list = p_tcb->next;
-    BOSS_ASSERT(_sched_tcb_list != _BOSS_NULL);
-  }
-  else
-  {
-    boss_tcb_t *p_find = _sched_tcb_list;
-    
-    while(p_find->next != p_tcb)
+    if(_sched_tcb_list == p_tcb)
     {
-      p_find = p_find->next;
-      BOSS_ASSERT(p_find != _BOSS_NULL);
+      _sched_tcb_list = p_tcb->run_next;
+    }
+    else
+    {
+      boss_tcb_t *p_prev = _sched_tcb_list;
+      
+      while(p_prev->run_next != p_tcb)
+      {
+        p_prev = p_prev->run_next;
+      }
+      
+      p_prev->run_next = p_tcb->run_next;
     }
     
-    p_find->next = p_tcb->next;
+    p_tcb->run_next = _BOSS_NULL;         /* 스케줄러 리스트에서 제거됨 */
   }
-
-  p_tcb->state  = _TCB_WAITING;   /* 스케줄러 리스트에서 제거됨 */
-  p_tcb->next   = _BOSS_NULL;
+  BOSS_IRQ_RESTORE();
 }
 
 
@@ -269,7 +260,7 @@ void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs)
   BOSS_IRQ_DISABLE();
   p_tcb->sigs = p_tcb->sigs | sigs;
 
-  if( (p_tcb->state == _TCB_WAITING) && (p_tcb->wait & sigs) )
+  if( p_tcb->wait & sigs )
   {
     _Boss_sched_list_insert(p_tcb);
   }
@@ -322,14 +313,10 @@ void Boss_task_create(  void (*task)(void *p_arg), void *p_arg,
                         boss_stk_t *sp_base, boss_uptr_t stk_bytes,
                         const char *name )
 {
-  BOSS_ASSERT(_sched_tcb_list != _BOSS_NULL);
-
+  BOSS_ASSERT(_BOSS_ISR_() == 0);
+  
   _Boss_tcb_init(p_tcb, prio, task, p_arg, sp_base, stk_bytes, name);
-  
-  BOSS_IRQ_DISABLE();
-  _Boss_sched_list_insert(p_tcb);
-  BOSS_IRQ_RESTORE();
-  
+  _Boss_sched_list_insert(p_tcb);  
   _Boss_schedule();
 }
 
@@ -365,7 +352,7 @@ void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio)
   BOSS_IRQ_DISABLE();
   p_tcb->prio = new_prio;
   
-  if(p_tcb->state == _TCB_LISTING)    /* schedule list update */
+  if(p_tcb->run_next != _BOSS_NULL)     /* schedule list update */
   {
     _Boss_sched_list_remove(p_tcb);
     _Boss_sched_list_insert(p_tcb);

@@ -41,21 +41,16 @@
 /*---------------------------------------------------------------------------*/
 /*                        TCB (Task Control Block)                           */
 /*---------------------------------------------------------------------------*/
-typedef enum {
-  _TCB_WAITING  =  _BOSS_FALSE,     /* 시그널 대기 상태 */
-  _TCB_LISTING  =  _BOSS_TRUE,      /* 스케줄 리스팅    */
-} _tcb_state_t;
-
-typedef struct boss_tcb_struct {  /* [ TCB (Task Control Block) 구조체 ] */  
-  struct boss_tcb_struct *next;           /* 스케줄러 리스트 링크 */
-  _tcb_state_t      state;                /* 태스크 상태 (Waiting or Listing) */
+typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */  
+  struct boss_tcb_struct *run_next;       /* Schedule list link */
+                                          /* NULL : Waiting / !NULL : Scheduled */
   
-  boss_prio_t       prio;                 /* 우선순위     */
+  boss_prio_t       prio;                 /* Task Priority  */
   
-  boss_sigs_t       sigs;                 /* 현재 시그널  */
-  boss_sigs_t       wait;                 /* 대기 시그널  */
+  boss_sigs_t       sigs;                 /* Current Signal */
+  boss_sigs_t       wait;                 /* Waiting Signal */
   
-  boss_stk_t        *sp;                  /* 스택 포인터  */
+  boss_stk_t        *sp;                  /* Task Stack Point */
   
   #ifdef _BOSS_SPY_
   boss_stk_t    *sp_base;
