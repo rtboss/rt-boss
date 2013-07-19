@@ -22,8 +22,8 @@ typedef struct _sem_link_struct {
 } _sem_link_t;
 
 
-typedef struct boss_sem_struct {
-  boss_reg_t        busy;           /* 0 = free / 0! = busy */
+typedef struct {
+  boss_reg_t        busy;           /* 0 = free / 0 != busy */
   
   boss_tcb_t        *owner_tcb;
   _sem_link_t       *wait_list;
@@ -34,6 +34,7 @@ typedef struct boss_sem_struct {
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 void Boss_sem_init(boss_sem_t *p_sem);
+boss_reg_t Boss_sem_accept(boss_sem_t *p_sem);
 boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout);
 void Boss_sem_release(boss_sem_t *p_sem);
 
