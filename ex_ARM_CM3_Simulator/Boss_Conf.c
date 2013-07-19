@@ -31,21 +31,12 @@
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
 #ifdef _BOSS_SPY_
-
-boss_u32_t  _spy_elapse_us  = 0;              /* 경과 시간 (us)       */
-
-
-struct {                /* [ ARM Cortex-Mx MSP (Main Stack Pointer) ] */
-  boss_stk_t    *sp_base;
-  boss_stk_t    *sp_peak;
-  boss_stk_t    *sp_limit;
-} _spy_msp;
-
+boss_stk_t  *_boss_spy_msp_peak;    /* Cortex-Mx MSP(Main Stack Pointer) Peak */
 
 /*===========================================================================
-    _   B O S S _ S P Y _ E L A P S E _ U S
+    _   B O S S _ S P Y _ C P U _ T I M E R _ U S
 ---------------------------------------------------------------------------*/
-boss_u32_t _Boss_spy_elapse_us(void)
+boss_u32_t Boss_spy_cpu_timer_us(void)
 {
   boss_u32_t us;
   boss_u32_t reload = SysTick->LOAD;
@@ -53,117 +44,42 @@ boss_u32_t _Boss_spy_elapse_us(void)
   
                                 /* SysTick->VAL => micro second */
   us = (value * ((boss_u32_t)_BOSS_TICK_MS_ * (boss_u32_t)1000)) / (reload + 1);
-  us = _spy_elapse_us + us;
-  
+
   return us;
 }
 
-
 /*===========================================================================
-    _   B O S S _ S P Y _ T I C K
+    B O S S _ S P Y _ S T A C K _ C H E C K
 ---------------------------------------------------------------------------*/
-void _Boss_spy_tick(void)
+void Boss_spy_stack_check(boss_tcb_t *p_tcb)
 {
-  _spy_elapse_us += (boss_u32_t)_BOSS_TICK_MS_ * (boss_u32_t)1000;  /* tick_ms -> us */
+  BOSS_ASSERT(p_tcb->ex.sp_base[0] == (boss_stk_t)0xEEEEEEEE);  // Stack crack  
+  BOSS_ASSERT(p_tcb->ex.sp_base[1] == (boss_stk_t)0xEEEEEEEE);
   
-  if(_spy_elapse_us > 4200000000u)  /* 70분 = 4,200,000,000 us */
+  while( (p_tcb->ex.sp_peak[-1] != (boss_stk_t)0xEEEEEEEE) 
+      || (p_tcb->ex.sp_peak[-2] != (boss_stk_t)0xEEEEEEEE)
+      || (p_tcb->ex.sp_peak[-3] != (boss_stk_t)0xEEEEEEEE)
+      || (p_tcb->ex.sp_peak[-4] != (boss_stk_t)0xEEEEEEEE) 
+    #if 0
+      || (p_tcb->ex.sp_peak[-5] != (boss_stk_t)0xEEEEEEEE)
+      || (p_tcb->ex.sp_peak[-6] != (boss_stk_t)0xEEEEEEEE)
+      || (p_tcb->ex.sp_peak[-7] != (boss_stk_t)0xEEEEEEEE)
+      || (p_tcb->ex.sp_peak[-8] != (boss_stk_t)0xEEEEEEEE)
+    #endif
+      )
   {
-    Boss_spy_restart();             /* 70분 경과시 */
-  }
-}
-
-
-/*===========================================================================
-    _   B O S S _ S P Y _ C O N T E X T
----------------------------------------------------------------------------*/
-void _Boss_spy_context(boss_tcb_t *curr_tcb, boss_tcb_t *best_tcb)
-{
-  { /* [ Stack ] */
-    BOSS_ASSERT(curr_tcb->ex.sp_base[0] == (boss_stk_t)0xEEEEEEEE);  // Stack invasion
-    while( (curr_tcb->ex.sp_peak[-1] != (boss_stk_t)0xEEEEEEEE) 
-        || (curr_tcb->ex.sp_peak[-2] != (boss_stk_t)0xEEEEEEEE)
-        || (curr_tcb->ex.sp_peak[-3] != (boss_stk_t)0xEEEEEEEE)
-        || (curr_tcb->ex.sp_peak[-4] != (boss_stk_t)0xEEEEEEEE) )
+    p_tcb->ex.sp_peak--;
+    if(p_tcb->ex.sp_peak <= p_tcb->ex.sp_base)
     {
-      curr_tcb->ex.sp_peak--;
-      BOSS_ASSERT(curr_tcb->ex.sp_peak > curr_tcb->ex.sp_base);   // Stack overflow
+      BOSS_ASSERT(_BOSS_FALSE);             // Stack overflow
+      for(;;);
     }
   }
-
-  { /* [ C P U ] */
-    boss_u32_t now_us = _Boss_spy_elapse_us();
-
-    if( now_us < curr_tcb->ex.cpu_ent_us ) {       /* Tick Timer Pend */
-      now_us = now_us + ((boss_u32_t)_BOSS_TICK_MS_ * (boss_u32_t)1000);
-      BOSS_ASSERT(now_us >= curr_tcb->ex.cpu_ent_us);
-    }
-    
-    curr_tcb->ex.cpu_sum_us += now_us - curr_tcb->ex.cpu_ent_us;
-    best_tcb->ex.cpu_ent_us = now_us;
-  }
   
-  /* [ Context Switch Number ] */
-  best_tcb->ex.context++;
-  
-  
-  /* [ ARM Cortex-Mx MSP (Main Stack Pointer) ] */
-  BOSS_ASSERT(_spy_msp.sp_base[0] == (boss_stk_t)0xEEEEEEEE);   // Stack invasion
-  while( (_spy_msp.sp_peak[-1] != (boss_stk_t)0xEEEEEEEE) 
-      || (_spy_msp.sp_peak[-2] != (boss_stk_t)0xEEEEEEEE)
-      || (_spy_msp.sp_peak[-3] != (boss_stk_t)0xEEEEEEEE)
-      || (_spy_msp.sp_peak[-4] != (boss_stk_t)0xEEEEEEEE) )
-  {
-    _spy_msp.sp_peak--;
-    BOSS_ASSERT(_spy_msp.sp_peak > _spy_msp.sp_base);  // MSP Stack overflow
-  }
+  BOSS_ASSERT(p_tcb->ex.sp_limit[-2] == (boss_stk_t)0xEEEEEEEE);  // Stack crack  
+  BOSS_ASSERT(p_tcb->ex.sp_limit[-1] == (boss_stk_t)0xEEEEEEEE);
 }
 
-
-/*===========================================================================
-    _   B O S S _ S P Y _ S E T U P
----------------------------------------------------------------------------*/
-void _Boss_spy_setup(boss_tcb_t *p_tcb, boss_stk_t *sp_base, boss_uptr_t bytes)
-{
-  { /* [ Stack ] */
-    boss_uptr_t size  = bytes / sizeof(boss_stk_t);
-    
-    p_tcb->ex.sp_base  = &sp_base[0];
-    p_tcb->ex.sp_peak  = &sp_base[size-1];
-    p_tcb->ex.sp_limit = &sp_base[size];
-  }
-
-  /* [ C P U ] */
-  p_tcb->ex.cpu_ent_us = 0;
-  p_tcb->ex.cpu_sum_us = 0;
-
-  /* [ Context Switch Number ] */
-  p_tcb->ex.context = 0;
-}
-
-
-/*===========================================================================
-    B O S S _ S P Y _ R E S T A R T
----------------------------------------------------------------------------*/
-void Boss_spy_restart(void)
-{
-  boss_tcb_t *p_tcb;
-
-  _Boss_sched_lock();
-
-  BOSS_IRQ_DISABLE();
-  _spy_elapse_us  = 0;
-  BOSS_IRQ_RESTORE();
-
-  p_tcb = Boss_ex_task_list(0);
-  while(p_tcb != _BOSS_NULL)
-  {
-    p_tcb->ex.cpu_ent_us  = 0;
-    p_tcb->ex.cpu_sum_us  = 0;
-    p_tcb->ex.context     = 0;
-    p_tcb = p_tcb->ex_task_link;
-  }
-  _Boss_sched_free();
-}
 
 
 /*===========================================================================
@@ -171,8 +87,7 @@ void Boss_spy_restart(void)
 ---------------------------------------------------------------------------*/
 void Boss_spy_report(void)
 {
-  boss_tcb_t *curr_tcb;
-  boss_u32_t total_us;
+  boss_u32_t total_us = 0;
   
   boss_u32_t cpu_pct_sum = 0;
   boss_u32_t context_sum = 0;
@@ -182,24 +97,17 @@ void Boss_spy_report(void)
   PRINTF("\n[TASK]\t  STACK %%(u/t)\t  C P U    Context\n");
   PRINTF("------------------------------------------\n");
   
-  BOSS_IRQ_DISABLE();
-  total_us = _Boss_spy_elapse_us();
-  _spy_elapse_us = 0;
-  
-  curr_tcb = Boss_self();
-  curr_tcb->ex.cpu_sum_us += total_us - curr_tcb->ex.cpu_ent_us;
-  curr_tcb->ex.cpu_ent_us = 0;
-  BOSS_IRQ_RESTORE();
-  
+  total_us = Boss_spy_elapse_prev_us();
+
   p_tcb = Boss_ex_task_list(0);
   while( p_tcb != _BOSS_NULL )
   {
-    PRINTF(" %s", p_tcb->name);
+    PRINTF("%5s", p_tcb->name);
 
     { /* [ Stack ] */
       boss_uptr_t stk_total;
       boss_uptr_t stk_used;
-      boss_reg_t  stk_pct;
+      boss_reg_t  stk_pct;      /* percent xx % */
       
       stk_total = (boss_uptr_t)p_tcb->ex.sp_limit - (boss_uptr_t)p_tcb->ex.sp_base;
       stk_used  = (boss_uptr_t)p_tcb->ex.sp_limit - (boss_uptr_t)p_tcb->ex.sp_peak;
@@ -210,42 +118,27 @@ void Boss_spy_report(void)
 
     { /* [ C P U ] */
       boss_u32_t cpu_pct = 0;     /* percent XX.xxx % */
-      
-      if(p_tcb->ex.cpu_sum_us != 0)
-      {
-        cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->ex.cpu_sum_us) * (boss_u64_t)100000)
+
+      cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->ex.run_time) * (boss_u64_t)100000000)
                                                     / (boss_u64_t)total_us);
-        p_tcb->ex.cpu_sum_us = 0;
-      }
       
-      PRINTF("\t %2d.%03d%%", (int)(cpu_pct/1000), (int)(cpu_pct%1000));
+      PRINTF("\t %2d.%03d%%", (int)(cpu_pct/1000000), (int)(cpu_pct%1000000)/1000);
       cpu_pct_sum = cpu_pct_sum  + cpu_pct;
     }
     
     PRINTF("   %7d\n", p_tcb->ex.context);
     context_sum = context_sum + p_tcb->ex.context;
-    p_tcb->ex.context = 0;
-    
+
     p_tcb = p_tcb->ex_task_link;    // Next Task link
   }
 
   PRINTF("[TOTAL] :\t\t %2d.%03d%%   %7d\n\n",
-          (int)(cpu_pct_sum/1000), (int)(cpu_pct_sum%1000), context_sum);
-  _Boss_sched_free();
-  
-  { /* [ ARM Cortex-Mx MSP (Main Stack Pointer) ] */
-    boss_uptr_t msp_total;
-    boss_uptr_t msp_used;
-    boss_reg_t  msp_pct;
-    
-    msp_total = (boss_uptr_t)_spy_msp.sp_limit - (boss_uptr_t)_spy_msp.sp_base;
-    msp_used  = (boss_uptr_t)_spy_msp.sp_limit - (boss_uptr_t)_spy_msp.sp_peak; 
-    msp_pct = (boss_reg_t)(((boss_u32_t)msp_used * 100) / (boss_u32_t)msp_total);
-    
-    PRINTF("[ M S P ] %%(u/t) :  %2d%% (%3d/%3d)\n", msp_pct, msp_used, msp_total);
-  }
-}
+          (int)(cpu_pct_sum/1000000), (int)(cpu_pct_sum%1000000)/1000, context_sum);
 
+  PRINTF("   total_us = %d\n", total_us);
+  
+  _Boss_sched_free();
+}
 
 
 #if defined ( __CC_ARM )                                /*!< KEIL Compiler >!*/
@@ -302,18 +195,61 @@ static boss_stk_t *_Boss_spy_msp_base(void)
 ---------------------------------------------------------------------------*/
 void _Boss_spy_msp_setup(void)
 {
-  boss_stk_t *msp = (boss_stk_t *)__get_MSP(); /* Get Current Main Stack Pointer (MSP) */
-  
-  _spy_msp.sp_base  = _Boss_spy_msp_base();
-  _spy_msp.sp_limit = _Boss_spy_msp_limit();
-  _spy_msp.sp_peak  = (boss_stk_t *)msp;
-  
-  msp = msp - 1;    /* FD(Full Descending) Stack */
-  
-  for(; _spy_msp.sp_base <= msp; --msp)
+  boss_stk_t *msp_curr = (boss_stk_t *)__get_MSP(); /* Get Current Main Stack Pointer (MSP) */
+  boss_stk_t *msp_base = _Boss_spy_msp_base();
+
+  _boss_spy_msp_peak = msp_curr;
+    
+  for(; msp_base < msp_curr; msp_base++)
   {
-    *msp = (boss_stk_t)0xEEEEEEEE;  // 스택 [E] empty
+    *msp_base = (boss_stk_t)0xEEEEEEEE;  // 스택 [E] empty
   }
+}
+
+
+/*===========================================================================
+    _   B O S S _ S P Y _ M S P _ C H E C K
+---------------------------------------------------------------------------*/
+void _Boss_spy_msp_check(void)
+{  
+  /* [ ARM Cortex-Mx MSP (Main Stack Pointer) ] */
+  while( (_boss_spy_msp_peak[-1] != (boss_stk_t)0xEEEEEEEE) 
+      || (_boss_spy_msp_peak[-2] != (boss_stk_t)0xEEEEEEEE)
+      || (_boss_spy_msp_peak[-3] != (boss_stk_t)0xEEEEEEEE)
+      || (_boss_spy_msp_peak[-4] != (boss_stk_t)0xEEEEEEEE)
+    #if 1
+      || (_boss_spy_msp_peak[-5] != (boss_stk_t)0xEEEEEEEE)
+      || (_boss_spy_msp_peak[-6] != (boss_stk_t)0xEEEEEEEE)
+      || (_boss_spy_msp_peak[-7] != (boss_stk_t)0xEEEEEEEE)
+      || (_boss_spy_msp_peak[-8] != (boss_stk_t)0xEEEEEEEE)
+    #endif
+      )
+  {
+    _boss_spy_msp_peak--;
+    if(_boss_spy_msp_peak <= _Boss_spy_msp_base())
+    {
+      BOSS_ASSERT(_BOSS_FALSE);             // MSP Stack overflow
+      for(;;);
+    }
+  }
+}
+
+
+/*===========================================================================
+    B O S S _ S P Y _ M S P _ R E P O R T
+---------------------------------------------------------------------------*/
+void Boss_spy_msp_report(void)
+{
+  boss_u32_t msp_total;
+  boss_u32_t msp_used;
+  boss_u32_t percent;
+
+  msp_total = (boss_u32_t)_Boss_spy_msp_limit() - (boss_u32_t)_Boss_spy_msp_base();
+  msp_used  = (boss_u32_t)_Boss_spy_msp_limit() - (boss_u32_t)_boss_spy_msp_peak;
+  percent   = (msp_used * 100) / msp_total;
+
+
+  PRINTF("[ M S P ] %%(u/t) :  %2d%% (%3d/%3d)\n", percent, msp_used, msp_total);
 }
 #endif /* _BOSS_SPY_ */
 
@@ -417,11 +353,11 @@ void SysTick_Handler(void)    /* Boss Tick Timer */
 {
   _BOSS_ISR_BEGIN();
   {
-    _Boss_timer_tick(_BOSS_TICK_MS_);
-    
     #ifdef _BOSS_SPY_
-    _Boss_spy_tick();
+    _Boss_spy_elapse_tick(_BOSS_TICK_MS_);
     #endif
+    
+    _Boss_timer_tick(_BOSS_TICK_MS_);
   }
   _BOSS_ISR_FINIS();
 }

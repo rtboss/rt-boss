@@ -432,6 +432,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\Boss\Boss_Tmr.c</FilePath>
             </File>
+            <File>
+              <FileName>Boss_SPY.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Boss\Boss_SPY.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

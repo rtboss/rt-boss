@@ -38,11 +38,6 @@ void _Boss_context_switch(void);
 boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
                                 boss_stk_t *sp_base,  boss_uptr_t stk_bytes);
 
-#ifdef _BOSS_SPY_
-void _Boss_spy_context(boss_tcb_t *curr_tcb, boss_tcb_t *best_tcb);
-void _Boss_spy_setup(boss_tcb_t *p_tcb, boss_stk_t *sp_base, boss_uptr_t bytes);
-#endif
-
 /*===========================================================================
     B O S S _ S E L F
 ---------------------------------------------------------------------------*/
@@ -60,10 +55,6 @@ static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
                             boss_stk_t *sp_base, boss_uptr_t stk_bytes,
                             const char *name )
 {
-  #ifdef _BOSS_SPY_
-  _Boss_spy_setup(p_tcb, sp_base, stk_bytes);
-  #endif
-
   p_tcb->run_next = _BOSS_NULL;
   p_tcb->prio   = prio;
   
@@ -76,11 +67,20 @@ static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
   {
     int  i;
     for(i = 0; i < _BOSS_TCB_NAME_SIZE; i++) {
-      p_tcb->name[i] = name[i];
+      if(name != _BOSS_NULL) {
+        p_tcb->name[i] = name[i];
+      } else {
+        p_tcb->name[i] = 0;
+      }
     }
     p_tcb->name[_BOSS_TCB_NAME_SIZE - 1] = 0;
   }
   #endif
+
+  #ifdef _BOSS_SPY_
+  _Boss_spy_set(p_tcb, sp_base, stk_bytes);
+  #endif
+
   #ifdef _BOSS_TCB_EXTEND_
   BOSS_IRQ_DISABLE();  
   _ex_task_count++;
