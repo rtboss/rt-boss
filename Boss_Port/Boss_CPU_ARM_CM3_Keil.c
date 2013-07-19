@@ -71,13 +71,15 @@
 #include "Boss.h"
 
 /*===========================================================================*/
-/*                      DEFINITIONS & TYPEDEFS & MACROS                      */
+/*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
+void _Boss_task_exit(int exit_code);
+
 
 /*===========================================================================
     _ B O S S _ S T K _ I N I T
 ---------------------------------------------------------------------------*/
-boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
+boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
                                 boss_stk_t *sp_base,  boss_uptr_t stk_bytes)
 {
   boss_uptr_t size  = stk_bytes / sizeof(boss_stk_t);
@@ -85,7 +87,7 @@ boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
   
   --sp;   *sp = 0x01000000L;          /* PSR  */
   --sp;   *sp = (boss_stk_t)task;     /* PC : Task Entry Point */
-  --sp;   *sp = 0x00000014L;          /* LR   */ 
+  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR   */
   --sp;   *sp = 0x00000012L;          /* R12  */
   --sp;   *sp = 0x00000003L;          /* R3   */
   --sp;   *sp = 0x00000002L;          /* R2   */

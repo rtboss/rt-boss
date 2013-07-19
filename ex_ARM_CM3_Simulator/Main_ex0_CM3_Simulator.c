@@ -33,7 +33,7 @@ boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
 /*===============================================
     A A _ M A I N
 -----------------------------------------------*/
-void aa_main(void *p_arg)
+int aa_main(void *p_arg)
 {  
   int aa_count = 0;
   
@@ -43,7 +43,16 @@ void aa_main(void *p_arg)
   {    
     Boss_sleep(500);  /* 500ms */
     PRINTF(" AA_TASK count = %d \n", ++aa_count);
+
+    if(100 < aa_count)
+    {
+      break;
+    }
   }
+  
+  PRINTF("[%s TASK] Exit \n", Boss_self()->name);
+  
+  return 0;
 }
 
 
@@ -56,7 +65,7 @@ boss_align_t  bb_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
 /*===============================================
     B B _ M A I N
 -----------------------------------------------*/
-void bb_main(void *p_arg)
+int bb_main(void *p_arg)
 {
   int bb_count = 0;
   
@@ -89,7 +98,7 @@ boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
 /*===========================================================================
     I D L E _ M A I N
 ---------------------------------------------------------------------------*/
-void idle_main(void *p_arg)
+int idle_main(void *p_arg)
 {
   for(;;)
   {

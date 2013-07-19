@@ -29,7 +29,7 @@
 /*---------------------------------------------------------------------------*/
 void _Boss_start_schedule(void);
 void _Boss_context_switch(void);
-boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
+boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
                                 boss_stk_t *sp_base,  boss_uptr_t stk_bytes);
 
 #ifdef _BOSS_SPY_
@@ -50,7 +50,7 @@ boss_tcb_t *Boss_self(void)
     _   B O S S _ T C B _ I N I T
 ---------------------------------------------------------------------------*/
 static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
-                            void (*task)(void *p_arg), void *p_arg, 
+                            int (*task)(void *p_arg), void *p_arg, 
                             boss_stk_t *sp_base, boss_uptr_t stk_bytes,
                             const char *name )
 {
@@ -81,7 +81,7 @@ static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
 /*===========================================================================
     B O S S _ I N I T
 ---------------------------------------------------------------------------*/
-void Boss_init(void (*idle_task)(void *), boss_tcb_t *idle_tcb,
+void Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
                                   boss_stk_t *sp_base, boss_uptr_t stk_bytes)
 {
   BOSS_ASSERT( (_sched_tcb_list == _BOSS_NULL) && (_sched_locking == 0) );
@@ -308,7 +308,7 @@ void Boss_sigs_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs)
 /*===========================================================================
     B O S S _ T A S K _ C R E A T E
 ---------------------------------------------------------------------------*/
-void Boss_task_create(  void (*task)(void *p_arg), void *p_arg, 
+void Boss_task_create(  int (*task)(void *p_arg), void *p_arg, 
                         boss_tcb_t *p_tcb, boss_prio_t prio, 
                         boss_stk_t *sp_base, boss_uptr_t stk_bytes,
                         const char *name )
@@ -317,27 +317,6 @@ void Boss_task_create(  void (*task)(void *p_arg), void *p_arg,
   
   _Boss_tcb_init(p_tcb, prio, task, p_arg, sp_base, stk_bytes, name);
   _Boss_sched_list_insert(p_tcb);  
-  _Boss_schedule();
-}
-
-
-/*===========================================================================
-    B O S S _ T A S K _ D E L E T E
----------------------------------------------------------------------------*/
-void Boss_task_delete(void)
-{  
-  boss_tcb_t  *cur_tcb;
-  
-  BOSS_ASSERT( (_BOSS_IRQ_() == 0) && (_BOSS_ISR_() == 0)
-                && (Boss_sched_locking() == 0) );
-  
-  cur_tcb = Boss_self();
-  
-  BOSS_IRQ_DISABLE();
-  _Boss_sched_list_remove(cur_tcb);
-  cur_tcb->wait   = 0;
-  BOSS_IRQ_RESTORE();
-
   _Boss_schedule();
 }
 
@@ -359,6 +338,26 @@ void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio)
   }
   BOSS_IRQ_RESTORE();
 
+  _Boss_schedule();
+}
+
+
+/*===========================================================================
+    _   B O S S _ T A S K _ E X I T
+---------------------------------------------------------------------------*/
+void _Boss_task_exit(int exit_code)
+{  
+  boss_tcb_t  *cur_tcb;
+
+  BOSS_ASSERT(exit_code == 0);
+  BOSS_ASSERT(_BOSS_IRQ_() == 0);
+  BOSS_ASSERT(_BOSS_ISR_() == 0);
+  BOSS_ASSERT(Boss_sched_locking() == 0);
+  
+  cur_tcb = Boss_self();
+  cur_tcb->wait   = 0;
+  _Boss_sched_list_remove(cur_tcb);
+  
   _Boss_schedule();
 }
 

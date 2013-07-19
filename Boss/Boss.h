@@ -65,7 +65,7 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void Boss_init(void (*idle_task)(void *), boss_tcb_t *idle_tcb,
+void Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
                                   boss_stk_t *sp_base, boss_uptr_t stk_bytes);
 
 void Boss_start(void);
@@ -77,13 +77,11 @@ void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 void Boss_sigs_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 boss_sigs_t Boss_sigs_receive(boss_sigs_t wait_sigs);
 
-void Boss_task_create( void (*task)(void *p_arg), void *p_arg, 
+void Boss_task_create( int (*task)(void *p_arg), void *p_arg, 
                         boss_tcb_t *p_tcb, boss_prio_t prio, 
                         boss_stk_t *sp_base, boss_uptr_t stk_bytes,
                         const char *name );
 
-
-void Boss_task_delete(void);
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio);
 
 void _Boss_sched_lock(void);
