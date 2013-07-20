@@ -11,7 +11,7 @@
 /*===========================================================================*/
 /*                           RT-BOSS 사용자 설정                             */
 /*---------------------------------------------------------------------------*/
-#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
+#define _BOSS_TICK_MS_          10      /* Tick (ms)  */
 #define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
 
 #define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
@@ -45,9 +45,8 @@ typedef struct {
   boss_stk_t    *sp_base;
   boss_stk_t    *sp_peak;
   boss_stk_t    *sp_limit;
-
-  boss_u32_t    cpu_ent_us;
-  boss_u32_t    cpu_sum_us;     /* Task run-time sum (us) */
+  
+  boss_u32_t    run_time;     /* Task run-time sum (us) */
   boss_uptr_t   context;      /* Context Switch Number  */
 } _boss_tcb_ex_t;
 #endif 
@@ -123,6 +122,7 @@ typedef enum {
 #include "Boss_Q_Msg.h"
 #include "Boss_Q_MBox.h"
 #include "Boss_Sem.h"
+#include "Boss_SPY.h"
 
 /*===========================================================================*/
 /*                                    ASSERT                                 */

@@ -72,6 +72,7 @@ SRC =	Boss_Conf.c			\
 		Boss_Q_Msg.c		\
 		Boss_Q_MBox.c		\
 		Boss_Sem.c			\
+		Boss_SPY.c			\
 		Main_ex0_ATmega128.c
 
 

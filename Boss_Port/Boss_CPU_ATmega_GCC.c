@@ -13,7 +13,9 @@
                   |------------|
                   | 하위  번지 |
                   |############|------------------------+
-                  |    0xEE    | <- sp_base             |
+                  | 0xEEEEEEEE | <- sp_base[0]          |
+                  | 0xEEEEEEEE | <- sp_base[1]          |
+                  |============|                        |
                   |    0xEE    |                        |
                   |    0xEE    |                        |
                   |    0xEE    |                        |
@@ -45,7 +47,9 @@
                   |------------|                        |
                   |R24 p_arg(L)|                        |
                   |------------|                        |
-                  |  R23 ~  R4 |                        |
+                  |     R23    |                        |
+                  |      ~     |                        |
+                  |     R4     |                        |
                   |------------|                        |
                   |     R3     |                        |
                   |------------|                        |
@@ -60,8 +64,15 @@
                   | PC Entry(H)|                        |
                   |------------|                        |
                   | PC Entry(L)|                        |
+                  |++++++++++++|                        |
+                  |  PC exit(H)|                        |
+                  |------------|                        |
+                  |  PC exit(L)|                        |
+                  |============|                        |
+                  |    0xEE    | <-  sp_limit[-2]       |
+                  |    0xEE    | <-  sp_limit[-1]       |
                   |############|------------------------+
-                  | 상위  번지 | <- sp_limit
+                  | 상위  번지 | <- sp_limit == sp_base[size]
                   |------------|
 */
 
@@ -157,6 +168,7 @@
 /*---------------------------------------------------------------------------*/
 boss_reg_t  _isr_nesting = 0;
 
+void _Boss_task_exit(int exit_code);
 
 /*===========================================================================
     _ B O S S _ S T K _ I N I T
@@ -167,6 +179,20 @@ boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
   boss_uptr_t tmp;
   boss_uptr_t size  = stk_bytes / sizeof(boss_stk_t);
   boss_stk_t  *sp   = &sp_base[size-1];   /* ED(Empty Descending) Stack */
+  
+  #ifdef _BOSS_SPY_ 
+  boss_uptr_t i;
+  for(i = 0; i < size; i++) {
+    sp_base[i] = (boss_stk_t)0xEE;      // 스택 [E] empty
+  }
+  sp = sp - 2;
+  #endif
+
+  tmp = (boss_uptr_t)_Boss_task_exit;
+  *sp = (boss_stk_t)tmp;          /* PC(L) : Task Exit Point */
+  sp--;
+  *sp = (boss_stk_t)(tmp >> 8);   /* PC(H) */
+  sp--;
   
   tmp = (boss_uptr_t)task;
   *sp = (boss_stk_t)tmp;          /* PC(L) : Task Entry Point */
@@ -218,9 +244,17 @@ boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
 
 
 /*===========================================================================
+    _   B O S S _ S T A R T _ T C B _ S P
+---------------------------------------------------------------------------*/
+boss_stk_t *_Boss_start_tcb_sp(void)
+{
+  return (Boss_self()->sp);
+}
+
+
+/*===========================================================================
     _   B O S S _ S T A R T _ S C H E D U L E
 ---------------------------------------------------------------------------*/
-extern boss_stk_t *_Boss_start_tcb_sp(void);
 void _Boss_start_schedule(void) __attribute__ ( ( naked ) );
 void _Boss_start_schedule(void)
 {
