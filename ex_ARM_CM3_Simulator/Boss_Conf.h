@@ -9,16 +9,6 @@
 */
 
 /*===========================================================================*/
-/*                           RT-BOSS 사용자 설정                             */
-/*---------------------------------------------------------------------------*/
-#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
-#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
-
-#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
-#define _BOSS_SPY_                      /* Stack, CPU, Context Switch */
-#define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
-
-/*===========================================================================*/
 /*                            RT-BOSS 데이터형                               */
 /*---------------------------------------------------------------------------*/
 typedef unsigned char       boss_u08_t;       /* unsigned  8bit 데이터형 */
@@ -38,19 +28,33 @@ typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 
 
 /*===========================================================================*/
+/*                           RT-BOSS 사용자 설정                             */
+/*---------------------------------------------------------------------------*/
+#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
+#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
+
+#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
+#define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
+
+/*===========================================================================*/
 /*                           TCB Extend                                      */
 /*---------------------------------------------------------------------------*/
-#ifdef _BOSS_SPY_
 #define _BOSS_TCB_EXTEND_
+
+#ifdef _BOSS_TCB_EXTEND_
+#define _BOSS_SPY_                      /* Stack, CPU, Context Switch */
+
 typedef struct {
-  boss_stk_t    *sp_base;
-  boss_stk_t    *sp_peak;
-  boss_stk_t    *sp_limit;
+  #ifdef _BOSS_SPY_
+    boss_stk_t    *sp_base;
+    boss_stk_t    *sp_peak;
+    boss_stk_t    *sp_limit;
   
-  boss_u32_t    run_time;     /* Task run-time sum (us) */
-  boss_uptr_t   context;      /* Context Switch Number  */
+    boss_u32_t    run_time;     /* Task run-time sum (us) */
+    boss_u32_t    context;      /* Context Switch Number  */
+  #endif
 } _boss_tcb_ex_t;
-#endif 
+#endif /* _BOSS_TCB_EXTEND_ */
 
 /*===========================================================================*/
 /*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
