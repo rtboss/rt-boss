@@ -119,10 +119,10 @@ void Boss_spy_report(void)
     { /* [ C P U ] */
       boss_u32_t cpu_pct = 0;     /* percent XX.xxx % */
 
-      cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->ex.run_time) * (boss_u64_t)100000000)
+      cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->ex.run_time) * (boss_u64_t)100000)
                                                     / (boss_u64_t)total_us);
       
-      PRINTF("\t %2d.%03d%%", (int)(cpu_pct/1000000), (int)(cpu_pct%1000000)/1000);
+      PRINTF("\t %2d.%03d%%", (int)(cpu_pct/1000), (int)(cpu_pct%1000));
       cpu_pct_sum = cpu_pct_sum  + cpu_pct;
     }
     
@@ -133,7 +133,7 @@ void Boss_spy_report(void)
   }
 
   PRINTF("[TOTAL] :\t\t %2d.%03d%%   %7d\n\n",
-          (int)(cpu_pct_sum/1000000), (int)(cpu_pct_sum%1000000)/1000, context_sum);
+          (int)(cpu_pct_sum/1000), (int)(cpu_pct_sum%1000), context_sum);
 
   PRINTF("   total_us = %d\n", total_us);
   
