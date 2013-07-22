@@ -136,6 +136,7 @@ void Boss_spy_report(void)
           (int)(cpu_pct_sum/1000), (int)(cpu_pct_sum%1000), context_sum);
 
   PRINTF("   total_us = %d\n", total_us);
+  PRINTF("   SysTick->LOAD = %d\n", SysTick->LOAD);
   
   _Boss_sched_free();
 }
@@ -330,7 +331,7 @@ void Boss_device_init(void)
   _Boss_spy_msp_setup();
   #endif
 
-  if (SysTick_Config(SystemCoreClock / 1000)) { /* Setup SysTick Timer for 1 msec interrupts  */
+  if (SysTick_Config(SystemCoreClock / (1000 / _BOSS_TICK_MS_))) { /* Setup SysTick Timer for 1 msec interrupts  */
     while (1);                                  /* Capture error */
   }
   
