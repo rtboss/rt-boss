@@ -354,6 +354,10 @@ void SysTick_Handler(void)    /* Boss Tick Timer */
 {
   _BOSS_ISR_BEGIN();
   {
+    #ifdef _BOSS_RR_QUANTUM_MS
+    _Boss_sched_rr_quantum_tick(_BOSS_TICK_MS_);
+    #endif
+
     #ifdef _BOSS_SPY_
     _Boss_spy_elapse_tick(_BOSS_TICK_MS_);
     #endif

@@ -186,6 +186,10 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
       p_tcb->run_next   = p_prev->run_next;
       p_prev->run_next  = p_tcb;
     }
+
+    #ifdef _BOSS_RR_QUANTUM_MS
+    p_tcb->quantum_ms = _BOSS_RR_QUANTUM_MS;
+    #endif
   }
   BOSS_IRQ_RESTORE();
 }
@@ -220,6 +224,34 @@ static void _Boss_sched_list_remove(boss_tcb_t *p_tcb)
   BOSS_IRQ_RESTORE();
 }
 
+
+#ifdef _BOSS_RR_QUANTUM_MS
+/*===========================================================================
+    _   B O S S _ S C H E D _ R R _ Q U A N T U M _ T I C K
+---------------------------------------------------------------------------*/
+void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
+{
+  boss_tcb_t  *cur_tcb = Boss_self();
+  
+  if( cur_tcb->run_next && (cur_tcb->prio == cur_tcb->run_next->prio) )
+  {
+    if(cur_tcb->quantum_ms > tick_ms)
+    {
+      cur_tcb->quantum_ms = cur_tcb->quantum_ms - tick_ms;
+    }
+    else
+    {
+      cur_tcb->quantum_ms = 0;
+      _Boss_sched_list_remove(cur_tcb);
+      _Boss_sched_list_insert(cur_tcb);
+    }
+  }
+  else
+  {
+    cur_tcb->quantum_ms = _BOSS_RR_QUANTUM_MS;
+  }
+}
+#endif /* _BOSS_RR_QUANTUM_MS */
 
 
 /*

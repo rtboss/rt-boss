@@ -30,10 +30,11 @@ typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 /*===========================================================================*/
 /*                           RT-BOSS 사용자 설정                             */
 /*---------------------------------------------------------------------------*/
-#define _BOSS_TICK_MS_          1       /* Tick (ms)  */
-#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
+#define _BOSS_TICK_MS_          1       /* Tick (ms)          */
+#define _BOSS_RR_QUANTUM_MS     50      /* RR(Round Robin) Sched Quantum Time(ms) */
+#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name           */
 
-#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
+#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes              */
 #define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
 
 /*===========================================================================*/
@@ -90,6 +91,8 @@ typedef enum {
   
   AA_PRIO_1,              /* 1. TOP */
   BB_PRIO_2,              /* 2 */
+
+  Cx_PRIO_3,
   
   PRIO_BOSS_IDLE = 255,   /* 하위 우선순위 */
 } boss_prio_t;

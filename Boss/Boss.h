@@ -46,6 +46,7 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
                                           /* NULL : Waiting / !NULL : Scheduled */
   
   boss_prio_t       prio;                 /* Task Priority  */
+  boss_u16_t        quantum_ms;           /* Round Robin    */
   
   boss_sigs_t       sigs;                 /* Current Signal */
   boss_sigs_t       wait;                 /* Waiting Signal */
@@ -72,6 +73,10 @@ void Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
 void Boss_start(void);
 
 boss_tcb_t *Boss_self(void);
+
+#ifdef _BOSS_RR_QUANTUM_MS
+void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms);
+#endif
 
 boss_sigs_t Boss_wait(boss_sigs_t wait_sigs);
 void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
