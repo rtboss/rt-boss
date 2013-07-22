@@ -411,6 +411,7 @@ boss_tcb_t *Boss_ex_task_list(unsigned int i)
     while(i != 0) {
       p_tcb = p_tcb->ex_task_link;
       BOSS_ASSERT(p_tcb != _BOSS_NULL);
+      i--;
     }
   }
   _Boss_sched_free();
