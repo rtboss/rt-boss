@@ -42,9 +42,9 @@
   Define clocks
  *----------------------------------------------------------------------------*/
 #define __HSI             ( 8000000UL)
-#define __XTAL            ( 5000000UL)    /* Oscillator frequency             */
+#define __XTAL            ( 4000000UL)    /* Oscillator frequency             */
 
-#define __SYSTEM_CLOCK    (5*__XTAL)
+#define __SYSTEM_CLOCK    (3*__XTAL)
 
 
 /*----------------------------------------------------------------------------
