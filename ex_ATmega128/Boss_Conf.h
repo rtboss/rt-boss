@@ -24,15 +24,17 @@ typedef boss_u08_t          boss_stk_t;       /* 스택                   */
 typedef boss_u16_t          boss_sigs_t;      /* 시그널                 */
 typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
 
-typedef boss_u08_t          boss_align_t;     /* 메모리 정렬            */
+typedef boss_u08_t          boss_align_t;     /* 메모리 정렬 (1byte)     */
+
 
 /*===========================================================================*/
 /*                           RT-BOSS 사용자 설정                             */
 /*---------------------------------------------------------------------------*/
-#define _BOSS_TICK_MS_          10      /* Tick (ms)  */
-#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes      */
+#define _BOSS_TICK_MS_          10      /* Tick (ms)          */
+#define _BOSS_RR_QUANTUM_MS     50      /* RR(Round Robin) Sched Quantum Time(ms) */
+#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name           */
 
-#define _BOSS_TCB_NAME_SIZE     6       /* TCB Name */
+#define _BOSS_MEM_POOL_SIZE     1024    /* Bytes              */
 #define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
 
 /*===========================================================================*/
@@ -93,6 +95,8 @@ typedef enum {
   
   AA_PRIO_1,              /* 1. TOP */
   BB_PRIO_2,              /* 2 */
+
+  Cx_PRIO_3,
   
   PRIO_BOSS_IDLE = 255,   /* 하위 우선순위 */
 } boss_prio_t;
@@ -167,6 +171,7 @@ void Boss_mem_info_report(void);
 /*===========================================================================*/
 /*                     USER DEFINE & FUNCTION PROTOTYPES                     */
 /*---------------------------------------------------------------------------*/
-#define PRINTF(fmt, args...)      printf_P( PSTR(fmt), ##args )
+#define PRINTF(fmt, args...)     \
+  do{ _Boss_sched_lock(); printf_P( PSTR(fmt), ##args ); _Boss_sched_free(); } while(0)
 
 #endif  /* _BOSS_CONF_H_ */
