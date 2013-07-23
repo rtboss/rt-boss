@@ -351,7 +351,7 @@
               <MiscControls></MiscControls>
               <Define>STM32L1XX_MD</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\Boss;..\..\ex_STM32L1xx</IncludePath>
+              <IncludePath>..\;..\..\Boss</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
