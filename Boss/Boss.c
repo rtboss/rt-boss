@@ -166,7 +166,8 @@ static void _Boss_schedule(void)
 ---------------------------------------------------------------------------*/
 static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
 {
-  BOSS_IRQ_DISABLE();
+  //BOSS_ASSERT(_BOSS_IRQ_() != 0);
+  
   if(p_tcb->run_next == _BOSS_NULL)
   {
     if(p_tcb->prio < _sched_tcb_list->prio)
@@ -191,7 +192,6 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
     p_tcb->quantum_ms = _BOSS_RR_QUANTUM_MS;
     #endif
   }
-  BOSS_IRQ_RESTORE();
 }
 
 
@@ -200,7 +200,8 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
 ---------------------------------------------------------------------------*/
 static void _Boss_sched_list_remove(boss_tcb_t *p_tcb)
 {
-  BOSS_IRQ_DISABLE();
+  //BOSS_ASSERT(_BOSS_IRQ_() != 0);
+  
   if(p_tcb->run_next != _BOSS_NULL)
   {
     if(_sched_tcb_list == p_tcb)
@@ -221,7 +222,6 @@ static void _Boss_sched_list_remove(boss_tcb_t *p_tcb)
     
     p_tcb->run_next = _BOSS_NULL;         /* 스케줄러 리스트에서 제거됨 */
   }
-  BOSS_IRQ_RESTORE();
 }
 
 
@@ -242,8 +242,10 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
     else
     {
       cur_tcb->quantum_ms = 0;
+      BOSS_IRQ_DISABLE();
       _Boss_sched_list_remove(cur_tcb);
       _Boss_sched_list_insert(cur_tcb);
+      BOSS_IRQ_RESTORE();
     }
   }
   else
@@ -352,7 +354,10 @@ void Boss_task_create(  int (*task)(void *p_arg), void *p_arg,
   BOSS_ASSERT(_BOSS_ISR_() == 0);
   
   _Boss_tcb_init(p_tcb, prio, task, p_arg, sp_base, stk_bytes, name);
+  BOSS_IRQ_DISABLE();
   _Boss_sched_list_insert(p_tcb);  
+  BOSS_IRQ_RESTORE();
+  
   _Boss_schedule();
 }
 
@@ -413,7 +418,9 @@ void _Boss_task_exit(int exit_code)
   #endif
   
   cur_tcb->wait   = 0;
+  BOSS_IRQ_DISABLE();
   _Boss_sched_list_remove(cur_tcb);
+  BOSS_IRQ_RESTORE();
   
   _Boss_schedule();
 }
