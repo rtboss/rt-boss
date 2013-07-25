@@ -29,7 +29,7 @@ _svc_call_0:
 SVC_Handler:
 		BL      _Boss_start_tcb_sp  ;/* 리턴값 : "R0"는 start_tcb_sp       */
 
-		LDMIA   R0!, {R4-R11,LR}
+		LDMIA   R0!, {R4-R11,LR}    ;// R4-R11, EXC_RETURN 복원
 		MSR     PSP, R0
 
 		BX      LR                  ;/* 리턴 SVC (R0-R3, R12, PC, PSR 복원)*/

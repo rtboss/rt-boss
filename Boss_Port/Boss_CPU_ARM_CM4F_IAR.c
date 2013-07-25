@@ -103,8 +103,8 @@ boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
 
   
   --sp;   *sp = 0x01000000L;                  /* PSR  */
-  --sp;   *sp = (boss_stk_t)task;             /* PC  : Task Entry Point   */
-  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* R14 : Task Exit Function */
+  --sp;   *sp = (boss_stk_t)task;             /* PC : Task Entry Point    */
+  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR : Task Exit Function  */
   --sp;   *sp = 0x00000012L;                  /* R12  */
   --sp;   *sp = 0x00000003L;                  /* R3   */
   --sp;   *sp = 0x00000002L;                  /* R2   */

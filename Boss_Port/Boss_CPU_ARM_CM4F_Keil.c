@@ -31,9 +31,7 @@
                   | 0xEEEEEEEE |                        |
                   | 0xEEEEEEEE |                        |
                   |============|                        |
-    리턴 "SP" ->  | EXC_RETURN | = 0xFFFFFFFD           |
-                  |------------|                        |
-                  |     R4     |                        |
+    리턴 "SP" ->  |     R4     |                        |
                   |------------|                        |
                   |     R5     |                        |
                   |------------|                        |
@@ -48,6 +46,8 @@
                   |     R10    |                        |
                   |------------|                        |
                   |     R11    |                        |
+                  |------------|                        |
+                  | EXC_RETURN | = 0xFFFFFFFD           |
                   |============|                        |
                   |  R0(p_arg) |                        |
                   |------------|                        |
@@ -110,6 +110,10 @@ boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
   --sp;   *sp = 0x00000002L;                  /* R2   */
   --sp;   *sp = 0x00000001L;                  /* R1   */
   --sp;   *sp = (boss_stk_t)p_arg;            /* R0 : Argument */
+  
+  --sp;   *sp = 0xFFFFFFFD;                   /* EXC_RETURN : 0xFFFFFFFD    */
+                                              /* 스레드 특근 모드, PSP 사용 */
+  
   --sp;   *sp = 0x00000011L;                  /* R11  */
   --sp;   *sp = 0x00000010L;                  /* R10  */
   --sp;   *sp = 0x00000009L;                  /* R9   */
@@ -119,8 +123,6 @@ boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
   --sp;   *sp = 0x00000005L;                  /* R5   */
   --sp;   *sp = 0x00000004L;                  /* R4   */
   
-  --sp;   *sp = 0xFFFFFFFD;                   /* LR (EXC_RETURN : 0xFFFFFFFD) */
-                                              /* 스레드 특근 모드, PSP 사용   */
   return sp;
 }
 
@@ -171,8 +173,7 @@ __ASM void SVC_Handler(void)
 
   BL      _Boss_start_tcb_sp  /* 리턴값 : "R0"는 start_tcb_sp       */
   
-  LDMIA   R0!, {LR}
-  LDMIA   R0!, {R4-R11}  
+  LDMIA   R0!, {R4-R11,LR}    // R4-R11, EXC_RETURN 복원
   MSR     PSP, R0
   
   BX      LR                  /* 리턴 SVC (R0-R3, R12, PC, PSR 복원)*/
@@ -198,7 +199,6 @@ __ASM void PendSV_Handler(void)
   IMPORT  _Boss_switch_current_tcb
 
   MRS     R0, PSP           // R0-R3, R12, PC, PSR 저장되어 있음
-  STMDB   R0!, {R4-R11}     // R4-R11 저장
   
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
   TST       LR, #0x10
@@ -206,7 +206,7 @@ __ASM void PendSV_Handler(void)
   VSTMDBEQ  R0!, {S16-S31}  
   #endif
 
-  STMDB   R0!, {LR}       // EXC_RETURN 저장
+  STMDB   R0!, {R4-R11,LR}    // R4-R11, EXC_RETURN 저장
 
   /*
   ** void *_Boss_switch_current_tcb(void *cur_task_sp)
@@ -215,7 +215,7 @@ __ASM void PendSV_Handler(void)
   */
   BL      _Boss_switch_current_tcb
 
-  LDMIA   R0!, {LR}       // EXC_RETURN 복원
+  LDMIA   R0!, {R4-R11,LR}    // R4-R11, EXC_RETURN 복원
   
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
   TST       LR, #0x10
@@ -223,7 +223,6 @@ __ASM void PendSV_Handler(void)
   VLDMIAEQ  R0!, {S16-S31}  
   #endif
 
-  LDMIA   R0!, {R4-R11}  // R4-R11 복원
   MSR     PSP, R0
   
   BX      LR                // 리턴 PendSV (R0-R3, R12, PC, PSR 복원)
