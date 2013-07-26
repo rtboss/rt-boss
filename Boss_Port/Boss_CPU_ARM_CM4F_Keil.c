@@ -6,7 +6,7 @@
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
 /*===========================================================================*/
-/*                     [[ Cortex-M4(F) 스택 초기 구성 ]]                     */
+/*                            [[ 스택  구성 ]]                               */
 /*---------------------------------------------------------------------------*/
 /*
 [ _Boss_stk_init() ]
@@ -198,7 +198,7 @@ __ASM void PendSV_Handler(void)
 {
   IMPORT  _Boss_switch_current_tcb
 
-  MRS     R0, PSP           // R0-R3, R12, PC, PSR 저장되어 있음
+  MRS     R0, PSP         // R0-R3, R12, PC, PSR 저장되어 있음
   
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
   TST       LR, #0x10
@@ -225,7 +225,7 @@ __ASM void PendSV_Handler(void)
 
   MSR     PSP, R0
   
-  BX      LR                // 리턴 PendSV (R0-R3, R12, PC, PSR 복원)
+  BX      LR              // 리턴 PendSV (R0-R3, R12, PC, PSR 복원)
 
   ALIGN
 }
