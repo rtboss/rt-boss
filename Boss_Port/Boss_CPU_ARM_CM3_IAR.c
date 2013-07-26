@@ -6,7 +6,7 @@
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
 /*===========================================================================*/
-/*                      [[ Cortex-M3 스택 초기 구성 ]]                       */
+/*                            [[ 스택  구성 ]]                               */
 /*---------------------------------------------------------------------------*/
 /*
 [ _Boss_stk_init() ]
@@ -80,6 +80,7 @@
 /*---------------------------------------------------------------------------*/
 void _Boss_task_exit(int exit_code);
 
+void _svc_call_0(void);
 
 /*===========================================================================
     _ B O S S _ S T K _ I N I T
@@ -100,8 +101,8 @@ boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
 
   
   --sp;   *sp = 0x01000000L;                  /* PSR  */
-  --sp;   *sp = (boss_stk_t)task;             /* PC : Task Entry Point */
-  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR   */
+  --sp;   *sp = (boss_stk_t)task;             /* PC : Task Entry Point    */
+  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR : Task Exit Function  */
   --sp;   *sp = 0x00000012L;                  /* R12  */
   --sp;   *sp = 0x00000003L;                  /* R3   */
   --sp;   *sp = 0x00000002L;                  /* R2   */
@@ -130,6 +131,18 @@ boss_stk_t *_Boss_start_tcb_sp(void)
 
 
 /*===========================================================================
+    _   B O S S _ S T A R T _ S C H E D U L E
+---------------------------------------------------------------------------*/
+void _Boss_start_schedule(void)
+{
+  
+  __set_MSP(*(__IO uint32_t*)SCB->VTOR);  /* MSP를 초기 스택(__initial_sp)으로 설정 */
+  
+  _svc_call_0();
+}
+
+
+/*===========================================================================
     _ B O S S _ C O N T E X T _ S W I T C H
 ---------------------------------------------------------------------------*/
 void _Boss_context_switch(void)
@@ -142,7 +155,7 @@ void _Boss_context_switch(void)
 /*
 ** 아래의 함수는 "Boss_CPU_ARM_CM3_IAR_asm.s" 참조
 **
-** void _Boss_start_schedule(void);
+** void _svc_call_0(void);
 ** void SVC_Handler(void);
 ** void PendSV_Handler(void);
 */

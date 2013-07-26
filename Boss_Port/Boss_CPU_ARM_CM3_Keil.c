@@ -6,7 +6,7 @@
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
 /*===========================================================================*/
-/*                      [[ Cortex-M3 스택 초기 구성 ]]                       */
+/*                            [[ 스택  구성 ]]                               */
 /*---------------------------------------------------------------------------*/
 /*
 [ _Boss_stk_init() ]
@@ -80,6 +80,7 @@
 /*---------------------------------------------------------------------------*/
 void _Boss_task_exit(int exit_code);
 
+void _svc_call_0(void);
 
 /*===========================================================================
     _ B O S S _ S T K _ I N I T
@@ -100,8 +101,8 @@ boss_stk_t *_Boss_stk_init( int (*task)(void *p_arg), void *p_arg,
 
   
   --sp;   *sp = 0x01000000L;                  /* PSR  */
-  --sp;   *sp = (boss_stk_t)task;             /* PC : Task Entry Point */
-  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR   */
+  --sp;   *sp = (boss_stk_t)task;             /* PC : Task Entry Point    */
+  --sp;   *sp = (boss_stk_t)_Boss_task_exit;  /* LR : Task Exit Function  */
   --sp;   *sp = 0x00000012L;                  /* R12  */
   --sp;   *sp = 0x00000003L;                  /* R3   */
   --sp;   *sp = 0x00000002L;                  /* R2   */
@@ -132,7 +133,19 @@ boss_stk_t *_Boss_start_tcb_sp(void)
 /*===========================================================================
     _   B O S S _ S T A R T _ S C H E D U L E
 ---------------------------------------------------------------------------*/
-__ASM void _Boss_start_schedule(void)
+void _Boss_start_schedule(void)
+{
+  
+  __set_MSP(*(__IO uint32_t*)SCB->VTOR);  /* MSP를 초기 스택(__initial_sp)으로 설정 */
+  
+  _svc_call_0();
+}
+
+
+/*===========================================================================
+    _ S V C _ C A L L _ 0
+---------------------------------------------------------------------------*/
+__ASM void _svc_call_0(void)
 {
   SVC     0         /* SVC 0 호출 (SVC_Handler() 실행)  */
 }
@@ -145,20 +158,12 @@ __ASM void SVC_Handler(void)
 {
   IMPORT  _Boss_start_tcb_sp
 
-  CPSID   I                   /* [ IRQ 비활성화 ] */
-  
-  LDR     R0, =0xE000ED08     /* NVIC Vector Table Offset Register  */
-  LDR     R0, [R0]            /* Vector Table 시작 번지             */
-  LDR     R0, [R0, #0]        /* 최기 스택 (__initial_sp)           */
-  MSR     MSP, R0             /* "MSP"를 초기 스택 값으로 초기화    */
-
   BL      _Boss_start_tcb_sp  /* 리턴값 : "R0"는 start_tcb_sp       */
   
   LDMIA   R0!, {R4-R11}
   MSR     PSP, R0
-
+  
   LDR     LR, =0xFFFFFFFD     /* 스레드 특근 모드, PSP 사용         */
-  CPSIE   I                   /* [ IRQ 활성화 ]   */
   BX      LR                  /* 리턴 SVC (R0-R3, R12, PC, PSR 복원)*/
 
   ALIGN
@@ -183,6 +188,7 @@ __ASM void PendSV_Handler(void)
 
   MRS     R0, PSP         // R0-R3, R12, PC, PSR 저장되어 있음
   STMDB   R0!, {R4-R11}   // R4-R11 저장
+  
   MOV     R4, LR          // LR 임시저장 (BL 사용을 위해)
 
   /*
@@ -193,6 +199,7 @@ __ASM void PendSV_Handler(void)
   BL      _Boss_switch_current_tcb
 
   MOV     LR, R4          // LR 임시저장 (복원)
+
   LDMIA   R0!, {R4-R11}   // R4-R11 복원
   MSR     PSP, R0
   
