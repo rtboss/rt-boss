@@ -453,9 +453,9 @@
               <FilePath>..\system_ARMCM3.c</FilePath>
             </File>
             <File>
-              <FileName>Main_ex0_CM3_Simulator.c</FileName>
+              <FileName>Main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Main_ex0_CM3_Simulator.c</FilePath>
+              <FilePath>..\..\Main.c</FilePath>
             </File>
           </Files>
         </Group>

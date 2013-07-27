@@ -73,7 +73,7 @@ SRC =	Boss_Conf.c			\
 		Boss_Q_MBox.c		\
 		Boss_Sem.c			\
 		Boss_SPY.c			\
-		Main_ex0_ATmega128.c
+		Main.c
 
 
 # List C++ source files here. (C dependencies are automatically generated.)
@@ -107,7 +107,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = ../ ../../Boss ../../Boss_Port
+EXTRAINCDIRS = ../ ../../ ../../Boss ../../Boss_Port
 
 # View Path
 vpath %.c $(EXTRAINCDIRS)

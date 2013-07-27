@@ -453,9 +453,9 @@
               <FilePath>..\system_stm32l1xx.c</FilePath>
             </File>
             <File>
-              <FileName>Main_ex0_STM32L1xx.c</FileName>
+              <FileName>Main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Main_ex0_STM32L1xx.c</FilePath>
+              <FilePath>..\..\Main.c</FilePath>
             </File>
           </Files>
         </Group>

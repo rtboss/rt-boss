@@ -971,7 +971,7 @@
   <group>
     <name>Source files</name>
     <file>
-      <name>$PROJ_DIR$\..\Main_ex0_STM32L1xx.c</name>
+      <name>$PROJ_DIR$\..\..\Main.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\startup_stm32l1xx_md.s</name>
