@@ -304,22 +304,78 @@ void _assert(const char *file, unsigned int line)
 */
 
 /*===========================================================================
+    P R I N T F _ C O M _ I N I T
+---------------------------------------------------------------------------*/
+void fputc_com_init(void)
+{
+  USART_InitTypeDef USART_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  /* Enable GPIO clock */
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+
+  /* Enable USART clock */
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); 
+
+  /* Connect PXx to USARTx_Tx */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1);
+
+  /* Connect PXx to USARTx_Rx */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1);
+  
+  /* Configure USART Tx as alternate function push-pull */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+    
+  /* Configure USART Rx as alternate function push-pull */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+  /* USART configuration */
+  USART_InitStructure.USART_BaudRate = 115200;
+  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+  USART_InitStructure.USART_StopBits = USART_StopBits_1;
+  USART_InitStructure.USART_Parity = USART_Parity_No;
+  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+  USART_Init(USART1, &USART_InitStructure);
+    
+  /* Enable USART */
+  USART_Cmd(USART1, ENABLE);
+}
+
+
+/*===========================================================================
     F P U T C
 ---------------------------------------------------------------------------*/
-#if defined ( __CC_ARM )  /*---------------RealView Compiler --------------*/
 int fputc(int ch, FILE *f)
 {
-#if 0
-  if(ch == '\n') {
-    ITM_SendChar('\r');
+  static boss_reg_t fputc_init = _BOSS_FALSE;
+  
+  if(fputc_init == _BOSS_FALSE)
+  {
+    fputc_init = _BOSS_TRUE;
+    fputc_com_init();
   }
 
-  ITM_SendChar(ch);
-#endif
+  if(ch == '\n') {
+    fputc('\r', f);
+  }
+  
+  /* Loop until transmit data register is empty */
+  while((USART1->ISR & USART_FLAG_TXE) == (uint16_t)RESET)
+  {}
+  
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART */
+  USART1->TDR = (uint16_t)ch;
   
   return (ch);
 }
-#endif
 
 
 
