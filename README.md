@@ -1,106 +1,104 @@
 RT-BOSS
 =======
-V1.26  (2013/07/23)
-- ¶ó¿îµå·Îºó(Round Robin) ½ºÄÉÁÙ¸µ ±¸Çö.(_BOSS_RR_QUANTUM_MS)
-- STM32L1xx(Cortex-M3) KEIL/IAR ÇÁ·ÎÁ§Æ® Ãß°¡.
+> [RT-BOSS ì¹´íŽ˜](http://cafe.naver.com/rtboss "http://cafe.naver.com/rtboss")
 
----------------------------------------------------------------------------------------
-V1.25  (2013/07/20)
-- SPY ±â´É Á¤¸® ¹× "Boss_SPY.c/h" ÆÄÀÏ·Î ºÐ¸®.
-- TCB »óÅÂ Á¦°Å ÇÏ°í TCB ½ºÄÉÁÙ·¯ ¸µÅ©(run_next)·Î ÆÇ´ÜÇÔ.
-- Å¸ÀÌ¸Ó¸¦ Boss_mem ¿¡¼­ ÇÒ´çÇÏÁö ¾Ê°í º¯¼ö·Î Ã³¸®ÇÏµµ·ÏÇÔ.
-- Å¸ÀÌ¸Ó ÄÝ¹é ±â´É¸¸ Áö¿ø, Å¸ÀÌ¸Ó ½Ã±×³Î Ã³¸® Á¦°Å.
-- ¸ÞÀÏ¹Ú½º pend ¹× ¼¼¸¶Æ÷¾î Å¸ÀÓ¾Æ¿ôÀÌ "0" ÀÏ¶§ Å¸ÀÓ¾Æ¿ô¾øÀÌ ¹«±âÇÑ ´ë±â ÇÏµµ·ÏÇÔ.
-
----------------------------------------------------------------------------------------
-v1.24   (2012/02/18)
-- Cortex-M3 Main Stack °Ë»ç ±â´É. (MSP)
-- Cortex-M3 IAR Àû¿ë.
-- SPY °ü·Ã TCB ¸Ø¹ö ÀÌ¸§ º¯°æ. 
-- SPY¸¦ À§ÇÑ ½ºÅÃ ÃÊ±â°ªÀ» _Boss_spy_setup()ÇÔ¼ö·Î ÀÌµ¿.
-- SYP °ü·Ã ÄÚµå ÃÖÀûÈ­.
-- MainÀÇ ½ºÅÃ º¯¼ö¸¦ boss_mem_align_tÇüÀ¸·Î ¼±¾ð.
-
----------------------------------------------------------------------------------------
-v1.23   (2012/02/12)
-- ¸Þ¸ð¸® Ã¹¹øÂ° ºí·°¿¡ ÇÒ´çÇÏÁö ¸øÇÒ¶§ ¹ö±× ¼öÁ¤.
-- ¸Þ¸ð¸® °ü¸®ÀÚ Á¤º¸ Ãâ·Â ±â´É Ãß°¡. 
-- ¸Þ¸ð¸® ÇÒ´ç/ÇØÁ¦ ÇÔ¼ö ÀÌ¸§ º¯°æ.
-  Boss_mem_alloc() -> Boss_malloc()
-  Boss_mem_free() -> Boss_mfree()
-- ½Ã±×³Î Àü¼Û ÇÔ¼ö ÀÌ¸§ º¯°æ.
-  Boss_sigs_send() -> Boss_send()
-- Å¸ÀÌ¸Ó¸¦ Boss_mem ¿¡¼­ ÇÒ´ç ¹× ÇØÁ¦ ÇÏ´Â ¹æ½ÄÀ¸·Î º¯°æ.
-- Å¸ÀÌ¸Ó ¹Ýº¹ ±â´É Ãß°¡.
-- CPU Æ÷ÆÃÆÄÀÏ ÀÌ¸§º¯°æ.
-  Port_ARM_CM3_Keil.c -> Boss_CPU_ARM_CM3_Keil.c
-  Port_ATmega_GCC.c   -> Boss_CPU_ATmega_GCC.c
-- Idle Task¸¦ Main.c ÆÄÀÏ·Î ÀÌµ¿.
-- PRINTF() Ãâ·Â ¹®ÀÚ¿­ "\r\n" -> '\n' Àû¿ë. (Ãâ·ÂÇÔ¼ö º¯°æ)
-- ATmega : BOSS_ASSERT ÆÄÀÏ¸í Ãâ·ÂÇÏµµ·Ï º¯°æ.
-- SPY Ãâ·Â½Ã ÀüÃ¼ CPU Á¡À¯À² ¹× ÀüÃ¼ ¹®¸ÆÀüÈ¯ È¸¼ö Ãâ·ÂÇÏµµ·ÏÇÔ.
-
----------------------------------------------------------------------------------------
-v1.22   (2012/01/28)
-- Task CPU Á¡À¯·ü ÃøÁ¤ ±â´É Ãß°¡.
- 
----------------------------------------------------------------------------------------
-v1.21 	(2012/01/08)
-- TCB name Ãß°¡.
-- Stack °Ë»ç ±â´É Ãß°¡.
-- TCB ÃÊ±âÈ­ ÇÔ¼ö Ãß°¡.
-
----------------------------------------------------------------------------------------
-v1.20 	(2012/01/03)
-- ÆÄÀÏÀÌ¸§ ¹× ±¸Á¶ º¯°æ.
-- ¸Þ¸ð¸® ÇÒ´ç ¹× ÇØÁ¦ ¼Óµµ Ç×»ó.
-- ¸Þ¸ð¸® Á¤º¸°ü·Ã _BOSS_MEM_INFO_ Ãß°¡.
-- KernelÀÇ sleep ±â´ÉÀ» Timer¿Í ÅëÇÕ.
-- _Boss_start_schedule() È£Ãâ½Ã ÀÎÀÚ Àü¼Û¹æ½Ä¿¡¼­ ÇÔ¼öÈ£Ãâ ¹æ½ÄÀ¸·Îº¯°æ _Boss_start_tcb_sp()
-- Cortex-M3 SVC Ã³¸® ºÎºÐ Á¦°Å.
-- Mail Box Àü¼Û½Ã FIFO¹æ½ÄÀ¸·Î º¯°æ.
-- Mail Box Pand ½Ã ¸Þ½ÃÁö Ã³¸® °á°ú¿Í ÀÀ´ä °á°ú°ªÀ» ºÐ¸®.
-- ¼¼¸¶Æ÷¾î ¹× Mail Box Pand ½Ã ¿ì¼±¼øÀ§ Á¦¾î ±â´É Á¦¿Ü.
-- Å©¸®Æ¼ÄÃ ¼½¼Ç, º¯¼ö ÀúÀå¹æ½Ä Ãß°¡.
-- TCB »óÅÂ¸¦ WAITING(´ë±â) / LISTING(½ÇÇàÁß ¶Ç´Â ÁØºñ) µÎ°¡Áö »óÅÂ·Î Ãà¼Ò.
-
----------------------------------------------------------------------------------------
-v1.13 	(2011/02/08)
-- _Boss_schedule()¿¡¼­ Ã³¸®ÇÏ´ø "_current_tcb->status = TASK_SUSPEND"¸¦ 
-  _Boss_switch_current_tcb()¿¡¼­ Ã³¸® ÇÏµµ·ÏÇÔ.
-- ¹®¸ÆÀüÈ¯½Ã ÀÎÅÍ·´Æ® ÁßÁö ¹× º¹¿øÀ» "_Boss_context_switch()"¿¡¼­ MCUº°·Î Ã³¸®ÇÏµµ·ÏÇÔ.
-- ATmega ½ºÅÃ ±¸¼º º¯°æ ¹× SREG Ãß°¡.
-
----------------------------------------------------------------------------------------
-v1.12 	(2011/01/14)
-- Mail Box¿¡ ¿ì¼±¼øÀ§ ÀÎÀÚ¸¦ Ãß°¡ÇÔ.
-
----------------------------------------------------------------------------------------
-v1.11
-- Boss_wait() ½Ã±×³Î È®ÀÎ IRQ ÁßÁö ÈÄ ºñ±³.
-
----------------------------------------------------------------------------------------
-v1.10   (2010/12/15)
-- Cortex-M3 IAR Áö¿ø
-- ATmage128 GCC Áö¿ø
-
-- Æú´õ ±¸Á¶ ¹× ÇÔ¼ö ÀÌ¸§ º¯°æ
-- args TCB ÀúÀå¹æ½ÄÀ¸·Î º¯°æ
-
-- Boss_Conf.c ÆÄÀÏ Ãß°¡.(¼³Á¤ ÇÔ¼ö)
-- Å¸ÀÌ¸Ó, ¸Þ½ÃÁö, ¸ÞÀÏ¹Ú½ºÀÇ ¸Þ¸ð¸® ÇÒ´ç ¹æ¹ý º¯°æ
-  * Boss_Tmr    : _BOSS_TMR_ALLOC() / _BOSS_TMR_FREE()
-  * Boss_Q_Mail : _BOSS_MAIL_Q_BOX_ALLOC() / _BOSS_MAIL_Q_BOX_FREE()
-  * Boss_Q_Msg  : _BOSS_MSG_FIFO_ALLOC() / _BOSS_MSG_FIFO_FREE()
-
-- Boss_task_delete() ¹ÝÈ¯°ª(sp_base) Á¦°Å
-- ½ºÄÉÁÙ·¯ Á¤·Ä½Ã "prio_orig" ºñ±³ ·çÆ¾Á¦°Å
-- ¹®¸ÆÀüÈ¯ ½ÇÇà½Ã "_Boss_schedule()" È£ÃâÇÏ¿© "_Boss_context_switch()" ½ÇÇàÇÏµµ·ÏÇÔ.
-- ¸ÞÀÏ¹Ú½º ¼¼¸¶Æ÷¾î, ½ºÄÉÁÙ·¯(½Ã±×³Î Àü¼Û) ½ÇÇà½Ã IRQ È°¼ºÈ­ »óÅÂ·ÎÇÔ.
-- Cortex-M3 SVC Ã³¸® ÇÔ¼ö C¾ð¾î·Î ±¸Çö(½ºÅÃ È®ÀÎ ÄÚµå ASM) 
+### V1.26 (2013/07/23) ###
+	- ë¼ìš´ë“œë¡œë¹ˆ(Round Robin) ìŠ¤ì¼€ì¤„ë§ êµ¬í˜„.(_BOSS_RR_QUANTUM_MS)
+	- STM32L1xx(Cortex-M3) KEIL/IAR í”„ë¡œì íŠ¸ ì¶”ê°€.
 
 
----------------------------------------------------------------------------------------
-v1.00   (2010/11/30)
-- RT-BOSS (Cortex-M3 Keil)
-- Ä¿³Î / ¼¼¸¶Æ÷¾î / Å¸ÀÌ¸Ó / ¸Þ½ÃÁö / ¸ÞÀÏ¹Ú½º / ¸Þ¸ð¸® °ü¸® ±â´É±¸Çö
+### V1.25 (2013/07/20) ###
+	- SPY ê¸°ëŠ¥ ì •ë¦¬ ë° "Boss_SPY.c/h" íŒŒì¼ë¡œ ë¶„ë¦¬.
+	- TCB ìƒíƒœ ì œê±° í•˜ê³  TCB ìŠ¤ì¼€ì¤„ëŸ¬ ë§í¬(run_next)ë¡œ íŒë‹¨í•¨.
+	- íƒ€ì´ë¨¸ë¥¼ Boss_mem ì—ì„œ í• ë‹¹í•˜ì§€ ì•Šê³  ë³€ìˆ˜ë¡œ ì²˜ë¦¬í•˜ë„ë¡í•¨.
+	- íƒ€ì´ë¨¸ ì½œë°± ê¸°ëŠ¥ë§Œ ì§€ì›, íƒ€ì´ë¨¸ ì‹œê·¸ë„ ì²˜ë¦¬ ì œê±°.
+	- ë©”ì¼ë°•ìŠ¤ pend ë° ì„¸ë§ˆí¬ì–´ íƒ€ìž„ì•„ì›ƒì´ "0" ì¼ë•Œ íƒ€ìž„ì•„ì›ƒì—†ì´ ë¬´ê¸°í•œ ëŒ€ê¸° í•˜ë„ë¡í•¨.
+
+
+### v1.24 (2012/02/18) ###
+	- Cortex-M3 Main Stack ê²€ì‚¬ ê¸°ëŠ¥. (MSP)
+	- Cortex-M3 IAR ì ìš©.
+	- SPY ê´€ë ¨ TCB ë©ˆë²„ ì´ë¦„ ë³€ê²½. 
+	- SPYë¥¼ ìœ„í•œ ìŠ¤íƒ ì´ˆê¸°ê°’ì„ _Boss_spy_setup()í•¨ìˆ˜ë¡œ ì´ë™.
+	- SPY ê´€ë ¨ ì½”ë“œ ìµœì í™”.
+	- Mainì˜ ìŠ¤íƒ ë³€ìˆ˜ë¥¼ boss_mem_align_tí˜•ìœ¼ë¡œ ì„ ì–¸.
+
+
+### v1.23 (2012/02/12) ###
+	- ë©”ëª¨ë¦¬ ì²«ë²ˆì§¸ ë¸”ëŸ­ì— í• ë‹¹í•˜ì§€ ëª»í• ë•Œ ë²„ê·¸ ìˆ˜ì •.
+	- ë©”ëª¨ë¦¬ ê´€ë¦¬ìž ì •ë³´ ì¶œë ¥ ê¸°ëŠ¥ ì¶”ê°€. 
+	- ë©”ëª¨ë¦¬ í• ë‹¹/í•´ì œ í•¨ìˆ˜ ì´ë¦„ ë³€ê²½.
+  		Boss_mem_alloc() -> Boss_malloc()
+  		Boss_mem_free() -> Boss_mfree()
+	- ì‹œê·¸ë„ ì „ì†¡ í•¨ìˆ˜ ì´ë¦„ ë³€ê²½.
+  		Boss_sigs_send() -> Boss_send()
+	- íƒ€ì´ë¨¸ë¥¼ Boss_mem ì—ì„œ í• ë‹¹ ë° í•´ì œ í•˜ëŠ” ë°©ì‹ìœ¼ë¡œ ë³€ê²½.
+	- íƒ€ì´ë¨¸ ë°˜ë³µ ê¸°ëŠ¥ ì¶”ê°€.
+	- CPU í¬íŒ…íŒŒì¼ ì´ë¦„ë³€ê²½.
+  		Port_ARM_CM3_Keil.c -> Boss_CPU_ARM_CM3_Keil.c
+  		Port_ATmega_GCC.c   -> Boss_CPU_ATmega_GCC.c
+	- Idle Taskë¥¼ Main.c íŒŒì¼ë¡œ ì´ë™.
+	- PRINTF() ì¶œë ¥ ë¬¸ìžì—´ "\r\n" -> '\n' ì ìš©. (ì¶œë ¥í•¨ìˆ˜ ë³€ê²½)
+	- ATmega : BOSS_ASSERT íŒŒì¼ëª… ì¶œë ¥í•˜ë„ë¡ ë³€ê²½.
+	- SPY ì¶œë ¥ì‹œ ì „ì²´ CPU ì ìœ ìœ¨ ë° ì „ì²´ ë¬¸ë§¥ì „í™˜ íšŸìˆ˜ ì¶œë ¥í•˜ë„ë¡í•¨.
+
+
+### v1.22 (2012/01/28) ###
+	- Task CPU ì ìœ ë¥  ì¸¡ì • ê¸°ëŠ¥ ì¶”ê°€.
+
+
+### v1.21 (2012/01/08) ###
+	- TCB name ì¶”ê°€.
+	- Stack ê²€ì‚¬ ê¸°ëŠ¥ ì¶”ê°€.
+	- TCB ì´ˆê¸°í™” í•¨ìˆ˜ ì¶”ê°€.
+
+
+### v1.20 (2012/01/03) ###
+	- íŒŒì¼ì´ë¦„ ë° êµ¬ì¡° ë³€ê²½.
+	- ë©”ëª¨ë¦¬ í• ë‹¹ ë° í•´ì œ ì†ë„ í•­ìƒ.
+	- ë©”ëª¨ë¦¬ ì •ë³´ê´€ë ¨ _BOSS_MEM_INFO_ ì¶”ê°€.
+	- Kernelì˜ sleep ê¸°ëŠ¥ì„ Timerì™€ í†µí•©.
+	- _Boss_start_schedule() í˜¸ì¶œì‹œ ì¸ìž ì „ì†¡ë°©ì‹ì—ì„œ í•¨ìˆ˜í˜¸ì¶œ ë°©ì‹ìœ¼ë¡œë³€ê²½. _Boss_start_tcb_sp()
+	- Cortex-M3 SVC ì²˜ë¦¬ ë¶€ë¶„ ì œê±°.
+	- Mail Box ì „ì†¡ì‹œ FIFOë°©ì‹ìœ¼ë¡œ ë³€ê²½.
+	- Mail Box Pand ì‹œ ë©”ì‹œì§€ ì²˜ë¦¬ ê²°ê³¼ì™€ ì‘ë‹µ ê²°ê³¼ê°’ì„ ë¶„ë¦¬.
+	- ì„¸ë§ˆí¬ì–´ ë° Mail Box Pand ì‹œ ìš°ì„ ìˆœìœ„ ì œì–´ ê¸°ëŠ¥ ì œì™¸.
+	- í¬ë¦¬í‹°ì»¬ ì„¹ì…˜, ë³€ìˆ˜ ì €ìž¥ë°©ì‹ ì¶”ê°€.
+	- TCB ìƒíƒœë¥¼ WAITING(ëŒ€ê¸°) / LISTING(ì‹¤í–‰ì¤‘ ë˜ëŠ” ì¤€ë¹„) ë‘ê°€ì§€ ìƒíƒœë¡œ ì¶•ì†Œ.
+
+
+### v1.13 (2011/02/08) ###
+	- _Boss_schedule()ì—ì„œ ì²˜ë¦¬í•˜ë˜ "_current_tcb->status = TASK_SUSPEND"ë¥¼ 
+  		_Boss_switch_current_tcb()ì—ì„œ ì²˜ë¦¬ í•˜ë„ë¡í•¨.
+	- ë¬¸ë§¥ì „í™˜ì‹œ ì¸í„°ëŸ½íŠ¸ ì¤‘ì§€ ë° ë³µì›ì„ "_Boss_context_switch()"ì—ì„œ MCUë³„ë¡œ ì²˜ë¦¬í•˜ë„ë¡í•¨.
+	- ATmega ìŠ¤íƒ êµ¬ì„± ë³€ê²½ ë° SREG ì¶”ê°€.
+
+
+### v1.12 (2011/01/14) ###
+	- Mail Boxì— ìš°ì„ ìˆœìœ„ ì¸ìžë¥¼ ì¶”ê°€í•¨.
+
+### v1.11 (2010/12/23) ###
+	- Boss_wait() ì‹œê·¸ë„ í™•ì¸ IRQ ì¤‘ì§€ í›„ ë¹„êµ.
+
+### v1.10 (2010/12/15) ###
+	- Cortex-M3 IAR ì§€ì›
+	- ATmage128 GCC ì§€ì›
+	- í´ë” êµ¬ì¡° ë° í•¨ìˆ˜ ì´ë¦„ ë³€ê²½
+	- args TCB ì €ìž¥ë°©ì‹ìœ¼ë¡œ ë³€ê²½
+	- Boss_Conf.c íŒŒì¼ ì¶”ê°€.(ì„¤ì • í•¨ìˆ˜)
+	- íƒ€ì´ë¨¸, ë©”ì‹œì§€, ë©”ì¼ë°•ìŠ¤ì˜ ë©”ëª¨ë¦¬ í• ë‹¹ ë°©ë²• ë³€ê²½
+		* Boss_Tmr    : _BOSS_TMR_ALLOC() / _BOSS_TMR_FREE()
+		* Boss_Q_Mail : _BOSS_MAIL_Q_BOX_ALLOC() / _BOSS_MAIL_Q_BOX_FREE()
+		* Boss_Q_Msg  : _BOSS_MSG_FIFO_ALLOC() / _BOSS_MSG_FIFO_FREE()
+
+	- Boss_task_delete() ë°˜í™˜ê°’(sp_base) ì œê±°
+	- ìŠ¤ì¼€ì¤„ëŸ¬ ì •ë ¬ì‹œ "prio_orig" ë¹„êµ ë£¨í‹´ì œê±°
+	- ë¬¸ë§¥ì „í™˜ ì‹¤í–‰ì‹œ "_Boss_schedule()" í˜¸ì¶œí•˜ì—¬ "_Boss_context_switch()" ì‹¤í–‰í•˜ë„ë¡í•¨.
+	- ë©”ì¼ë°•ìŠ¤ ì„¸ë§ˆí¬ì–´, ìŠ¤ì¼€ì¤„ëŸ¬(ì‹œê·¸ë„ ì „ì†¡) ì‹¤í–‰ì‹œ IRQ í™œì„±í™” ìƒíƒœë¡œí•¨.
+	- Cortex-M3 SVC ì²˜ë¦¬ í•¨ìˆ˜ Cì–¸ì–´ë¡œ êµ¬í˜„(ìŠ¤íƒ í™•ì¸ ì½”ë“œ ASM) 
+
+
+### v1.00 (2010/11/30) ###
+	- RT-BOSS (Cortex-M3 Keil)
+	- ì»¤ë„ / ì„¸ë§ˆí¬ì–´ / íƒ€ì´ë¨¸ / ë©”ì‹œì§€ / ë©”ì¼ë°•ìŠ¤ / ë©”ëª¨ë¦¬ ê´€ë¦¬ ê¸°ëŠ¥êµ¬í˜„
+
