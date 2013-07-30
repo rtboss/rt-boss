@@ -89,6 +89,8 @@ void Boss_task_create( int (*task)(void *p_arg), void *p_arg,
                         const char *name );
 
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio);
+void _Boss_task_exit(int exit_code);
+
 #ifdef _BOSS_TCB_EXTEND_
 unsigned int Boss_ex_task_count(void);
 boss_tcb_t *Boss_ex_task_list(unsigned int i);
