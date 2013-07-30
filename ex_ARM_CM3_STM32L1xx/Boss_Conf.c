@@ -91,8 +91,11 @@ void Boss_spy_report(void)
   
   boss_u32_t cpu_pct_sum = 0;
   boss_u32_t context_sum = 0;
-  boss_tcb_t *p_tcb = _BOSS_NULL;
-  
+  boss_tcb_t *p_tcb;
+
+  _Boss_spy_msp_check();
+  Boss_spy_msp_report();
+
   _Boss_sched_lock();
   PRINTF("\n[TASK]\t  STACK %%(u/t)\t  C P U    Context\n");
   PRINTF("------------------------------------------\n");
@@ -250,7 +253,7 @@ void Boss_spy_msp_report(void)
   percent   = (msp_used * 100) / msp_total;
 
 
-  PRINTF("[ M S P ] %%(u/t) :  %2d%% (%3d/%3d)\n", percent, msp_used, msp_total);
+  PRINTF("\n[ M S P ] %%(u/t) :  %2d%% (%3d/%3d)\n", percent, msp_used, msp_total);
 }
 #endif /* _BOSS_SPY_ */
 
@@ -348,7 +351,7 @@ void Boss_device_init(void)
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
 /*===========================================================================
-    S Y S   T I C K _   H A N D L E R                 [Cortex-M3 SysTick ISR]
+    S Y S   T I C K _   H A N D L E R                         [ SysTick ISR ]
 ---------------------------------------------------------------------------*/
 void SysTick_Handler(void)    /* Boss Tick Timer */
 {
