@@ -83,7 +83,16 @@ int bb_main(void *p_arg)
     #ifdef _BOSS_MEM_INFO_
     Boss_mem_info_report();
     #endif
+    
+    if(10 <= bb_count)
+    {
+      break;
+    }
   }
+
+  PRINTF("[%s TASK] Exit \n", Boss_self()->name);
+  
+  return 0;
 }
 
 
