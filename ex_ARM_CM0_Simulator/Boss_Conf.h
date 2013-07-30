@@ -38,7 +38,7 @@ typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 #define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
 
 /*===========================================================================*/
-/*                           TCB Extend                                      */
+/*                           TCB 확장(Extension)                             */
 /*---------------------------------------------------------------------------*/
 #define _BOSS_TCB_EXTEND_
 
@@ -60,18 +60,19 @@ typedef struct {
 /*===========================================================================*/
 /*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
 /*---------------------------------------------------------------------------*/
-#define BOSS_IRQ_DISABLE()    do { \
-                                boss_reg_t _irq_storage_ = __get_PRIMASK(); \
-                                __disable_irq()
-                                    
-#define BOSS_IRQ_RESTORE()      __set_PRIMASK(_irq_storage_); \
-                              } while(0)
+#define BOSS_IRQ_DISABLE_SR( _irq_storage_ )  \
+              do { _irq_storage_ = __get_PRIMASK(); __disable_irq(); } while(0)
+            
+#define BOSS_IRQ_RESTORE_SR( _irq_storage_ )  \
+                                  do { __set_PRIMASK(_irq_storage_); } while(0)
 
 /*----------------------------------------------------------------------*/
-#define BOSS_IRQ_DISABLE_SR( _sr_ )  \
-                    do { _sr_ = __get_PRIMASK(); __disable_irq(); } while(0)
-            
-#define BOSS_IRQ_RESTORE_SR( _sr_ )     do { __set_PRIMASK(_sr_); } while(0)
+#define BOSS_IRQ_DISABLE()    do { \
+                                boss_reg_t _irq_storage_;           \
+                                BOSS_IRQ_DISABLE_SR(_irq_storage_)
+
+#define BOSS_IRQ_RESTORE()      BOSS_IRQ_RESTORE_SR(_irq_storage_); \
+                              } while(0)
 
 /*----------------------------------------------------------------------*/
 #define _BOSS_IRQ_()        __get_PRIMASK() /* 0 = Enable / 0 != Disable */
