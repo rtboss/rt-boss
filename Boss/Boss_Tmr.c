@@ -106,6 +106,7 @@ void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
 ---------------------------------------------------------------------------*/
 void _Boss_timer_callback_execute(void)
 {
+  _Boss_sched_lock();
   while(_boss_timer_exe_list != _BOSS_NULL)
   {
     boss_tmr_t  *p_done;
@@ -124,6 +125,7 @@ void _Boss_timer_callback_execute(void)
 
     callback(p_done);   // Callback Execute
   }
+  _Boss_sched_free();
 }
 
 
