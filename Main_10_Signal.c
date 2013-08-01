@@ -40,13 +40,12 @@ int aa_main(void *p_arg)
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
   
   for(;;)
-  {    
-    Boss_sleep(500);  /* 500ms */
-    PRINTF(" AA_TASK count = %d \n", ++aa_count);
+  {
+    boss_sigs_t sigs = Boss_wait(SIG_01_BIT);
 
-    if(100 < aa_count)
+    if(sigs & SIG_01_BIT)
     {
-      break;
+      PRINTF(" [AA] SIG_01_BIT 수신\n");
     }
   }
   
@@ -73,17 +72,11 @@ int bb_main(void *p_arg)
   
   for(;;)
   {
-    Boss_sleep(10 * 1000);  /* 10 Sec */
-        
-    #ifdef _BOSS_SPY_
-    Boss_spy_report();
-    #endif
-    
-    #ifdef _BOSS_MEM_INFO_
-    Boss_mem_info_report();
-    #endif
+    Boss_sleep(3 * 1000);
 
-    PRINTF("BB_TASK count = %d \n", ++bb_count);
+    PRINTF("\n(BB : %d) aa_tcb - SIG_01_BIT 전송(전)\n", ++bb_count);
+    Boss_send(&aa_tcb, SIG_01_BIT);
+    PRINTF("(BB) aa_tcb - SIG_01_BIT 전송(후)\n");
     
     if(10 <= bb_count)
     {
@@ -144,99 +137,56 @@ int main(void)
 
 
 /*
-        ########## 실행 결과 ##########
+설명 : 테스크 시그널(Signal) 통신 예제. 
+       AA 테스크는 "SIG_01_BIT" 시그널을 받으면 메시지를 출력함.
+       BB 테스크는 3초마다 AA 테스크로 "SIG_01_BIT" 시그널을 전송함.
 
-            [AA TASK] Init 
-            [BB TASK] Init 
-             AA_TASK count = 1 
-             AA_TASK count = 2 
-             AA_TASK count = 3 
-             AA_TASK count = 4 
-             AA_TASK count = 5 
-             AA_TASK count = 6 
-             AA_TASK count = 7 
-             AA_TASK count = 8 
-             AA_TASK count = 9 
-             AA_TASK count = 10 
-             AA_TASK count = 11 
-             AA_TASK count = 12 
-             AA_TASK count = 13 
-             AA_TASK count = 14 
-             AA_TASK count = 15 
-             AA_TASK count = 16 
-             AA_TASK count = 17 
-             AA_TASK count = 18 
-             AA_TASK count = 19 
-             AA_TASK count = 20 
 
-            [ M S P ] %(u/t) :  10% (112/1024)
+### 실행결과 ###
 
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     32%(168/512)    0.002%         1
-               AA     32%(168/512)    0.051%        21
-             Idle     56%( 72/128)   99.946%        20
-            [TOTAL] :                99.999%        42
-
-               total_us = 10000344
-               SysTick->LOAD = 11999
-
-            [Mmory]  Peak byte  Used byte  Total  Block  first
-            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
-            BB_TASK count = 1 
-             AA_TASK count = 21 
-             AA_TASK count = 22 
-             AA_TASK count = 23 
-             AA_TASK count = 24 
-             AA_TASK count = 25 
-
-             ------- 중략 -------
-
-             AA_TASK count = 96 
-             AA_TASK count = 97 
-             AA_TASK count = 98 
-             AA_TASK count = 99 
-             AA_TASK count = 100 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     48%(248/512)    0.051%         5
-               AA     32%(168/512)    0.052%       101
-             Idle     56%( 72/128)   99.896%       104
-            [TOTAL] :                99.999%       210
-
-               total_us = 50024063
-               SysTick->LOAD = 11999
-
-            [Mmory]  Peak byte  Used byte  Total  Block  first
-            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
-            BB_TASK count = 5 
-             AA_TASK count = 101 
-            [AA TASK] Exit 
-
-             ------- 중략 -------
-             
-            BB_TASK count = 9 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     48%(248/512)    0.053%        10
-             Idle     56%( 72/128)   99.919%       110
-            [TOTAL] :                99.972%       120
-
-               total_us = 100050061
-               SysTick->LOAD = 11999
-
-            [Mmory]  Peak byte  Used byte  Total  Block  first
-            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
-            BB_TASK count = 10 
-            [BB TASK] Exit 
-
+  [AA TASK] Init 
+  [BB TASK] Init 
+  
+  (BB : 1) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 2) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 3) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 4) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 5) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 6) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 7) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 8) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 9) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  
+  (BB : 10) aa_tcb - SIG_01_BIT 전송(전)
+   [AA] SIG_01_BIT 수신
+  (BB) aa_tcb - SIG_01_BIT 전송(후)
+  [BB TASK] Exit 
+    
 */
+

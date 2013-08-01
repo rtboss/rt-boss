@@ -18,6 +18,7 @@
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
+extern boss_tcb_t    bb_tcb;
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
@@ -40,16 +41,25 @@ int aa_main(void *p_arg)
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
   
   for(;;)
-  {    
-    Boss_sleep(500);  /* 500ms */
-    PRINTF(" AA_TASK count = %d \n", ++aa_count);
+  {
+    Boss_sleep(3 * 1000);
+    PRINTF("\n%d AA sleep 후\n", ++aa_count);
 
-    if(100 < aa_count)
+    PRINTF("  [AA] BB SIG_01_BIT send\n");
+    Boss_send(&bb_tcb, SIG_01_BIT);
+
+    PRINTF("    [AA] BB SIG_02_BIT send\n");
+    Boss_send(&bb_tcb, SIG_02_BIT);
+
+    PRINTF("      [AA] BB SIG_03_BIT send\n");
+    Boss_send(&bb_tcb, SIG_03_BIT);
+
+    if(10 <= aa_count)
     {
       break;
     }
   }
-  
+  Boss_send(&bb_tcb, SIG_00_BIT);
   PRINTF("[%s TASK] Exit \n", Boss_self()->name);
   
   return 0;
@@ -73,20 +83,30 @@ int bb_main(void *p_arg)
   
   for(;;)
   {
-    Boss_sleep(10 * 1000);  /* 10 Sec */
-        
-    #ifdef _BOSS_SPY_
-    Boss_spy_report();
-    #endif
-    
-    #ifdef _BOSS_MEM_INFO_
-    Boss_mem_info_report();
-    #endif
+    boss_sigs_t sigs = Boss_wait( SIG_00_BIT  // 종료 시그널
+                                | SIG_01_BIT
+                                | SIG_02_BIT
+                                | SIG_03_BIT
+                                );
 
-    PRINTF("BB_TASK count = %d \n", ++bb_count);
-    
-    if(10 <= bb_count)
+    if(sigs & SIG_01_BIT)
     {
+      PRINTF(" (BB) SIG_01_BIT receive\n");
+    }
+    
+    if(sigs & SIG_02_BIT)
+    {
+      PRINTF("   (BB) SIG_02_BIT receive\n");
+    }
+    
+    if(sigs & SIG_03_BIT)
+    {
+      PRINTF("     (BB) SIG_03_BIT receive\n");
+    }
+
+    if(sigs & SIG_00_BIT)
+    {
+      PRINTF("\n(BB) SIG_00_BIT (Exit) receive\n");
       break;
     }
   }
@@ -144,99 +164,101 @@ int main(void)
 
 
 /*
-        ########## 실행 결과 ##########
+설명 : 우선순위가 높은 AA테스크에서 BB테스크로 시그널(Signal) 통신 예제.
+     - 우선순위가 높은 AA 테스크는 3초마다 BB 테스크로 3개의 시그널을 전송함.
 
-            [AA TASK] Init 
-            [BB TASK] Init 
-             AA_TASK count = 1 
-             AA_TASK count = 2 
-             AA_TASK count = 3 
-             AA_TASK count = 4 
-             AA_TASK count = 5 
-             AA_TASK count = 6 
-             AA_TASK count = 7 
-             AA_TASK count = 8 
-             AA_TASK count = 9 
-             AA_TASK count = 10 
-             AA_TASK count = 11 
-             AA_TASK count = 12 
-             AA_TASK count = 13 
-             AA_TASK count = 14 
-             AA_TASK count = 15 
-             AA_TASK count = 16 
-             AA_TASK count = 17 
-             AA_TASK count = 18 
-             AA_TASK count = 19 
-             AA_TASK count = 20 
+     - BB 테스크는 "SIG_01_BIT, SIG_02_BIT, SIG_03_BIT" 시그널을 받으면
+       메시지를 출력하고 "SIG_00_BIT"시그널을 받으면 종료함.
+       
 
-            [ M S P ] %(u/t) :  10% (112/1024)
+### 실행결과 ###
 
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     32%(168/512)    0.002%         1
-               AA     32%(168/512)    0.051%        21
-             Idle     56%( 72/128)   99.946%        20
-            [TOTAL] :                99.999%        42
-
-               total_us = 10000344
-               SysTick->LOAD = 11999
-
-            [Mmory]  Peak byte  Used byte  Total  Block  first
-            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
-            BB_TASK count = 1 
-             AA_TASK count = 21 
-             AA_TASK count = 22 
-             AA_TASK count = 23 
-             AA_TASK count = 24 
-             AA_TASK count = 25 
-
-             ------- 중략 -------
-
-             AA_TASK count = 96 
-             AA_TASK count = 97 
-             AA_TASK count = 98 
-             AA_TASK count = 99 
-             AA_TASK count = 100 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     48%(248/512)    0.051%         5
-               AA     32%(168/512)    0.052%       101
-             Idle     56%( 72/128)   99.896%       104
-            [TOTAL] :                99.999%       210
-
-               total_us = 50024063
-               SysTick->LOAD = 11999
-
-            [Mmory]  Peak byte  Used byte  Total  Block  first
-            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
-            BB_TASK count = 5 
-             AA_TASK count = 101 
-            [AA TASK] Exit 
-
-             ------- 중략 -------
-             
-            BB_TASK count = 9 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     48%(248/512)    0.053%        10
-             Idle     56%( 72/128)   99.919%       110
-            [TOTAL] :                99.972%       120
-
-               total_us = 100050061
-               SysTick->LOAD = 11999
-
-            [Mmory]  Peak byte  Used byte  Total  Block  first
-            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
-            BB_TASK count = 10 
-            [BB TASK] Exit 
-
+  [AA TASK] Init 
+  [BB TASK] Init 
+  
+  1 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  2 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  3 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  4 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  5 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  6 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  7 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  8 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  9 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  10 AA sleep 후
+    [AA] BB SIG_01_BIT send
+      [AA] BB SIG_02_BIT send
+        [AA] BB SIG_03_BIT send
+  [AA TASK] Exit 
+   (BB) SIG_01_BIT receive
+     (BB) SIG_02_BIT receive
+       (BB) SIG_03_BIT receive
+  
+  (BB) SIG_00_BIT (Exit) receive
+  [BB TASK] Exit 
+    
 */
+
