@@ -142,3 +142,101 @@ int main(void)
   return 0;
 }
 
+
+/*
+        ########## 실행 결과 ##########
+
+            [AA TASK] Init 
+            [BB TASK] Init 
+             AA_TASK count = 1 
+             AA_TASK count = 2 
+             AA_TASK count = 3 
+             AA_TASK count = 4 
+             AA_TASK count = 5 
+             AA_TASK count = 6 
+             AA_TASK count = 7 
+             AA_TASK count = 8 
+             AA_TASK count = 9 
+             AA_TASK count = 10 
+             AA_TASK count = 11 
+             AA_TASK count = 12 
+             AA_TASK count = 13 
+             AA_TASK count = 14 
+             AA_TASK count = 15 
+             AA_TASK count = 16 
+             AA_TASK count = 17 
+             AA_TASK count = 18 
+             AA_TASK count = 19 
+             AA_TASK count = 20 
+
+            [ M S P ] %(u/t) :  10% (112/1024)
+
+            [TASK]    STACK %(u/t)    C P U    Context
+            ------------------------------------------
+               BB     32%(168/512)    0.002%         1
+               AA     32%(168/512)    0.051%        21
+             Idle     56%( 72/128)   99.946%        20
+            [TOTAL] :                99.999%        42
+
+               total_us = 10000344
+               SysTick->LOAD = 11999
+
+            [Mmory]  Peak byte  Used byte  Total  Block  first
+            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+
+            BB_TASK count = 1 
+             AA_TASK count = 21 
+             AA_TASK count = 22 
+             AA_TASK count = 23 
+             AA_TASK count = 24 
+             AA_TASK count = 25 
+
+             ------- 중략 -------
+
+             AA_TASK count = 96 
+             AA_TASK count = 97 
+             AA_TASK count = 98 
+             AA_TASK count = 99 
+             AA_TASK count = 100 
+
+            [ M S P ] %(u/t) :  10% (112/1024)
+
+            [TASK]    STACK %(u/t)    C P U    Context
+            ------------------------------------------
+               BB     48%(248/512)    0.051%         5
+               AA     32%(168/512)    0.052%       101
+             Idle     56%( 72/128)   99.896%       104
+            [TOTAL] :                99.999%       210
+
+               total_us = 50024063
+               SysTick->LOAD = 11999
+
+            [Mmory]  Peak byte  Used byte  Total  Block  first
+            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+
+            BB_TASK count = 5 
+             AA_TASK count = 101 
+            [AA TASK] Exit 
+
+             ------- 중략 -------
+             
+            BB_TASK count = 9 
+
+            [ M S P ] %(u/t) :  10% (112/1024)
+
+            [TASK]    STACK %(u/t)    C P U    Context
+            ------------------------------------------
+               BB     48%(248/512)    0.053%        10
+             Idle     56%( 72/128)   99.919%       110
+            [TOTAL] :                99.972%       120
+
+               total_us = 100050061
+               SysTick->LOAD = 11999
+
+            [Mmory]  Peak byte  Used byte  Total  Block  first
+            [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+
+            BB_TASK count = 10 
+            [BB TASK] Exit 
+
+*/
