@@ -73,22 +73,6 @@ void Boss_mbox_free(void *p_mbox)
 
 
 /*===========================================================================
-    B O S S _ M B O X _ S E N D
----------------------------------------------------------------------------*/
-void Boss_mbox_send(boss_mbox_q_t *mbox_q, void *p_mbox)
-{
-  _mbox_head_t  *h_mbox = ((_mbox_head_t *)p_mbox) - 1;
-
-  BOSS_ASSERT(h_mbox->sender == _BOSS_NULL);
-  BOSS_ASSERT(h_mbox->p_rsp == _BOSS_NULL);       /* MBox Send */
-
-  _Boss_mbox_insert(mbox_q, h_mbox);
-  
-  Boss_send(mbox_q->owner_tcb, mbox_q->mbox_sig);
-}
-
-
-/*===========================================================================
     B O S S _ M B O X _ P E N D
 ---------------------------------------------------------------------------*/
 boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
