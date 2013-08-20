@@ -214,20 +214,28 @@ void _sleep_callback(boss_tmr_t *p_tmr)
 boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms)
 {
   boss_sigs_t   recv_sigs;
-  _sleep_tmr_t  sleep_tmr;
-
-  sleep_tmr.tmr.prev  = _BOSS_NULL;
-  sleep_tmr.p_tcb     = Boss_self();
   
-  Boss_tmr_start((boss_tmr_t *)&sleep_tmr, wait_ms, _sleep_callback);
+  if(wait_ms != 0)
+  {
+    _sleep_tmr_t  sleep_tmr;
 
-  recv_sigs = Boss_wait(wait_sigs | BOSS_SIG_SLEEP);
+    sleep_tmr.tmr.prev  = _BOSS_NULL;
+    sleep_tmr.p_tcb     = Boss_self();
+    
+    Boss_tmr_start((boss_tmr_t *)&sleep_tmr, wait_ms, _sleep_callback);
 
-  if( (recv_sigs & BOSS_SIG_SLEEP) == 0 ) {
-    Boss_tmr_stop((boss_tmr_t *)&sleep_tmr);
+    recv_sigs = Boss_wait(wait_sigs | BOSS_SIG_SLEEP);
+
+    if( (recv_sigs & BOSS_SIG_SLEEP) == 0 ) {
+      Boss_tmr_stop((boss_tmr_t *)&sleep_tmr);
+    }
+    
+    recv_sigs = recv_sigs & ~BOSS_SIG_SLEEP;   /* BOSS_SIG_SLEEP 시그널 클리어 */
   }
-  
-  recv_sigs = recv_sigs & ~BOSS_SIG_SLEEP;   /* BOSS_SIG_SLEEP 시그널 클리어 */
+  else
+  {
+    recv_sigs = Boss_wait( wait_sigs );
+  }
   
   return recv_sigs;
 }
