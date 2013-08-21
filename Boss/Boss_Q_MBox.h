@@ -52,6 +52,6 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
                                     boss_uptr_t *p_rsp, boss_tmr_ms_t timeout);
 
 void *Boss_mbox_receive(boss_mbox_q_t *mail_q);
-void Boss_mbox_done(void *p_mbox, boss_uptr_t rsp);
+boss_reg_t Boss_mbox_done(void *p_mbox, boss_uptr_t rsp);
 
 #endif  /* _BOSS_Q_MBOX_H_ */

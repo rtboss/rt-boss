@@ -157,9 +157,10 @@ void *Boss_mbox_receive(boss_mbox_q_t *mail_q)
 /*===========================================================================
     B O S S _ M B O X _ D O N E
 ---------------------------------------------------------------------------*/
-void Boss_mbox_done(void *p_mbox, boss_uptr_t rsp)
+boss_reg_t Boss_mbox_done(void *p_mbox, boss_uptr_t rsp)
 {
   _mbox_head_t  *h_mbox = ((_mbox_head_t *)p_mbox) - 1;
+  boss_reg_t    mbox_done = (boss_reg_t)_BOSS_FAILURE;
 
   BOSS_ASSERT(h_mbox->state == _MBOX_EXECUTE);
 
@@ -168,10 +169,14 @@ void Boss_mbox_done(void *p_mbox, boss_uptr_t rsp)
   {
     *(h_mbox->p_rsp) = rsp;
     Boss_send(h_mbox->sender, BOSS_SIG_MBOX_PEND_DONE);
+
+    mbox_done = _BOSS_SUCCESS;
   }
   _Boss_sched_free();
   
   Boss_mfree(h_mbox);
+
+  return mbox_done;
 }
 
 
