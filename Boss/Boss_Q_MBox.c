@@ -82,8 +82,6 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
   boss_reg_t    irq_storage;
   boss_sigs_t   sigs;
 
-  BOSS_ASSERT(mbox_q->owner_tcb != _BOSS_NULL);
-  BOSS_ASSERT(mbox_q->owner_tcb != Boss_self());
   BOSS_ASSERT(p_rsp != _BOSS_NULL);                   /* MBox Pend */
   
   h_mbox->p_rsp = p_rsp;
@@ -110,21 +108,19 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
   }
 
   BOSS_ASSERT(sigs == 0);              /* 타임아웃 */
-  if(h_mbox->state == _MBOX_EXECUTE)    /* 처리 중 완료 까지 대기  */
+  if(h_mbox->state == _MBOX_EXECUTE)
   {
+    h_mbox->p_rsp = _BOSS_NULL;
     BOSS_IRQ_RESTORE_SR(irq_storage);
     
-    Boss_wait(BOSS_SIG_MBOX_PEND_DONE);
-    
-    return _BOSS_SUCCESS;
+    return (boss_reg_t)_BOSS_FAILURE;
   }
   
   BOSS_ASSERT(h_mbox->state == _MBOX_READY);
-  
   _Boss_mbox_remove(mbox_q, h_mbox);
-  Boss_mfree(h_mbox);
-  
   BOSS_IRQ_RESTORE_SR(irq_storage);
+
+  Boss_mfree(h_mbox);
 
   return (boss_reg_t)_BOSS_FAILURE;
 }
