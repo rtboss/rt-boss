@@ -89,15 +89,8 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
   Boss_sigs_clear(Boss_self(), BOSS_SIG_MBOX_PEND_DONE);
   _Boss_mbox_insert(mbox_q, h_mbox);
   Boss_send(mbox_q->owner_tcb, mbox_q->mbox_sig);
-
-  if( timeout == 0 )                          /* 대기 (타임아웃 사용안함) */
-  {
-    (void)Boss_wait(BOSS_SIG_MBOX_PEND_DONE);
-    
-    return _BOSS_SUCCESS;
-  }
-                                                  /* 대기 (타임아웃 사용) */
-  sigs = Boss_wait_sleep(BOSS_SIG_MBOX_PEND_DONE, timeout);
+  
+  sigs = Boss_wait_sleep(BOSS_SIG_MBOX_PEND_DONE, timeout);   /* 대기  */
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
   sigs = sigs | Boss_sigs_receive(BOSS_SIG_MBOX_PEND_DONE);
