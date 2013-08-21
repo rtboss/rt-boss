@@ -170,6 +170,8 @@ void Boss_mbox_done(void *p_mbox, boss_uptr_t rsp)
     Boss_send(h_mbox->sender, BOSS_SIG_MBOX_PEND_DONE);
   }
   _Boss_sched_free();
+  
+  Boss_mfree(h_mbox);
 }
 
 
