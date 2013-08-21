@@ -161,7 +161,7 @@ void *Boss_mbox_receive(boss_mbox_q_t *mail_q)
 /*===========================================================================
     B O S S _ M B O X _ D O N E
 ---------------------------------------------------------------------------*/
-void Boss_mbox_pend_done(void *p_mbox, boss_uptr_t rsp)
+void Boss_mbox_done(void *p_mbox, boss_uptr_t rsp)
 {
   _mbox_head_t  *h_mbox = ((_mbox_head_t *)p_mbox) - 1;
 
