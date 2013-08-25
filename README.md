@@ -2,6 +2,19 @@ RT-BOSS
 =======
 > [RT-BOSS 카페](http://cafe.naver.com/rtboss "http://cafe.naver.com/rtboss")
 
+### V1.27 (2013/08/26) ###
+	- 예제 코드 추가. ( Task, Timer, Signal 등 14개 )
+	- Cortex-M0 포팅.
+	- Cortex-M4 포팅.
+	- Main.c 파일 통합.
+	- Message Queue 외부 할당 방식으로 변경.
+	- 메일박스 관련 정리. (Boss_mbox_send() 기능 제거)
+	- Wait Sleep시 타임아웃 0이면 타이머 등록 안함.
+	- 타이머 콜백 실행시 문맥전환 금지.
+	- Cortex-Mx MSP 출력 추가. (Boss_spy_report)
+	- Task Exit 외부에서 호출 가능 하도록 함.
+
+
 ### V1.26 (2013/07/23) ###
 	- 라운드로빈(Round Robin) 스케줄링 구현.(_BOSS_RR_QUANTUM_MS)
 	- STM32L1xx(Cortex-M3) KEIL/IAR 프로젝트 추가.
