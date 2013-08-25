@@ -93,23 +93,17 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
     return _BOSS_SUCCESS;
   }
                                                         /* 세마포어 사용중 */
+  Boss_sigs_clear(cur_tcb, BOSS_SIG_SEM_OBTAIN);
+  
   p_sem->busy++;
   sem_link.p_tcb = cur_tcb;
   sem_link.next = _BOSS_NULL;
 
   sem_link.next = p_sem->wait_list;                         /* 리스트 추가  */
   p_sem->wait_list = &sem_link;
-  
-  Boss_sigs_clear(cur_tcb, BOSS_SIG_SEM_OBTAIN);
   BOSS_IRQ_RESTORE_SR(irq_storage);
 
-  if( timeout == 0 )                    /* 세마포어 대기 (타임아웃 사용안함) */
-  {
-    (void)Boss_wait(BOSS_SIG_SEM_OBTAIN);
-    return _BOSS_SUCCESS;
-  }
-                                         /* 세마포어 대기 (타임아웃 사용) */
-  sigs = Boss_wait_sleep(BOSS_SIG_SEM_OBTAIN, timeout);
+  sigs = Boss_wait_sleep(BOSS_SIG_SEM_OBTAIN, timeout);  /* 세마포어 대기  */
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
   sigs = sigs | Boss_sigs_receive(BOSS_SIG_SEM_OBTAIN);
