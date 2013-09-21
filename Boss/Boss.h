@@ -46,7 +46,10 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
                                           /* NULL : Waiting / !NULL : Scheduled */
   
   boss_prio_t       prio;                 /* Task Priority  */
+
+  #ifdef _BOSS_RR_QUANTUM_MS
   boss_u16_t        quantum_ms;           /* Round Robin    */
+  #endif
   
   boss_sigs_t       sigs;                 /* Current Signal */
   boss_sigs_t       wait;                 /* Waiting Signal */
