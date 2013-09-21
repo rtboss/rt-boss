@@ -38,7 +38,4 @@ void _Boss_timer_cb_task_set(boss_tcb_t *p_cb_tcb, boss_sigs_t cb_sig);
 void Boss_tmr_start(boss_tmr_t *p_tmr, boss_tmr_ms_t tmr_ms, tmr_cb_t callback);
 void Boss_tmr_stop(boss_tmr_t *p_tmr);
 
-void Boss_sleep(boss_tmr_ms_t wait_ms);
-boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms);
-
 #endif  /* _BOSS_TMR_H_ */

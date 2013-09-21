@@ -93,7 +93,7 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
     return _BOSS_SUCCESS;
   }
                                                         /* 세마포어 사용중 */
-  Boss_sigs_clear(cur_tcb, BOSS_SIG_SEM_OBTAIN);
+  Boss_sig_clear(cur_tcb, SIG_BOSS_SUCCESS);
   
   p_sem->busy++;
   sem_link.p_tcb = cur_tcb;
@@ -103,11 +103,11 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
   p_sem->wait_list = &sem_link;
   BOSS_IRQ_RESTORE_SR(irq_storage);
 
-  sigs = Boss_wait_sleep(BOSS_SIG_SEM_OBTAIN, timeout);  /* 세마포어 대기  */
+  sigs = Boss_sig_wait(SIG_BOSS_SUCCESS, timeout);        /* 세마포어 대기  */
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
-  sigs = sigs | Boss_sigs_receive(BOSS_SIG_SEM_OBTAIN);
-  if( sigs & BOSS_SIG_SEM_OBTAIN )                        /* 세마포어 획득  */
+  sigs = sigs | Boss_sig_receive(SIG_BOSS_SUCCESS);
+  if( sigs & SIG_BOSS_SUCCESS )                           /* 세마포어 획득  */
   {
     BOSS_ASSERT(p_sem->busy != 0);
     BOSS_ASSERT(p_sem->owner_tcb == cur_tcb);
@@ -157,7 +157,7 @@ void Boss_sem_release(boss_sem_t *p_sem)
     p_sem->busy--;
 
     p_sem->owner_tcb = p_best->p_tcb;
-    Boss_send(p_best->p_tcb, BOSS_SIG_SEM_OBTAIN);
+    Boss_sig_send(p_best->p_tcb, SIG_BOSS_SUCCESS);
   }
   BOSS_IRQ_RESTORE();
   _Boss_sched_free();
