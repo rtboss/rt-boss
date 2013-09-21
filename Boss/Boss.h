@@ -70,33 +70,37 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
+void        Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
                                   boss_stk_t *sp_base, boss_uptr_t stk_bytes);
-
-void Boss_start(void);
-
+void        Boss_start(void);
 boss_tcb_t *Boss_self(void);
+void        Boss_sleep(boss_tmr_ms_t wait_ms);
+
+boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms);
 
 boss_sigs_t Boss_wait(boss_sigs_t wait_sigs);
 void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 void Boss_sigs_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 boss_sigs_t Boss_sigs_receive(boss_sigs_t wait_sigs);
+void Boss_sleep(boss_tmr_ms_t wait_ms);
+boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms);
+
 
 void Boss_task_create( int (*task)(void *p_arg), void *p_arg, 
                         boss_tcb_t *p_tcb, boss_prio_t prio, 
                         boss_stk_t *sp_base, boss_uptr_t stk_bytes,
                         const char *name );
-
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio);
 void _Boss_task_exit(int exit_code);
+
 
 #ifdef _BOSS_TCB_EXTEND_
 unsigned int Boss_ex_task_count(void);
 boss_tcb_t *Boss_ex_task_list(unsigned int i);
 #endif
 
-void _Boss_sched_lock(void);
-void _Boss_sched_free(void);
+void      _Boss_sched_lock(void);
+void      _Boss_sched_free(void);
 boss_reg_t Boss_sched_locking(void);
 
 #endif  /* _BOSS_KERNEL_H_ */

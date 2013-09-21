@@ -262,6 +262,66 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
 
+
+/*===========================================================================
+    B O S S _ S L E E P
+---------------------------------------------------------------------------*/
+void Boss_sleep(boss_tmr_ms_t wait_ms)
+{
+  (void)Boss_wait_sleep( (boss_sigs_t)0, wait_ms);
+}
+
+/* Sleep Timer */
+typedef struct {
+  boss_tmr_t  tmr;
+  boss_tcb_t  *p_tcb;
+} _sleep_tmr_t;
+
+
+/*===========================================================================
+    _ S L E E P _ C A L L B A C K
+---------------------------------------------------------------------------*/
+void _sleep_callback(boss_tmr_t *p_tmr)
+{
+  _sleep_tmr_t *p_sleep_tmr = (_sleep_tmr_t *)p_tmr;
+
+  Boss_send(p_sleep_tmr->p_tcb, BOSS_SIG_SLEEP);
+}
+
+
+/*===========================================================================
+    B O S S _ W A I T _ S L E E P
+---------------------------------------------------------------------------*/
+boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms)
+{
+  boss_sigs_t   recv_sigs;
+  
+  if(wait_ms != 0)
+  {
+    _sleep_tmr_t  sleep_tmr;
+
+    sleep_tmr.tmr.prev  = _BOSS_NULL;
+    sleep_tmr.p_tcb     = Boss_self();
+    
+    Boss_tmr_start((boss_tmr_t *)&sleep_tmr, wait_ms, _sleep_callback);
+
+    recv_sigs = Boss_wait(wait_sigs | BOSS_SIG_SLEEP);
+
+    if( (recv_sigs & BOSS_SIG_SLEEP) == 0 ) {
+      Boss_tmr_stop((boss_tmr_t *)&sleep_tmr);
+    }
+    
+    recv_sigs = recv_sigs & ~BOSS_SIG_SLEEP;   /* BOSS_SIG_SLEEP 시그널 클리어 */
+  }
+  else
+  {
+    recv_sigs = Boss_wait( wait_sigs );
+  }
+  
+  return recv_sigs;
+}
+
+
 /*===========================================================================
     B O S S _ W A I T
 ---------------------------------------------------------------------------*/
