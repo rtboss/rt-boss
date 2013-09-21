@@ -30,15 +30,15 @@
 /*---------------------------------------------------------------------------*/
 /*                         RT-BOSS 시그널 비트 정의                          */
 /*                                                                           */
-/*    시그널 데이터형이 32Bit일 경우 "BOSS_SIG_MSB_BIT" 는 "0x8000 0000"     */
-/*    시그널 데이터형이 16bit일 경우 "BOSS_SIG_MSB_BIT" 는 "0x8000"          */
+/*    시그널 데이터형이 32Bit일 경우 "SIG_BOSS_MSB_BIT" 는 "0x8000 0000"     */
+/*    시그널 데이터형이 16bit일 경우 "SIG_BOSS_MSB_BIT" 는 "0x8000"          */
 /*---------------------------------------------------------------------------*/
-#define BOSS_SIG_MSB_BIT  (boss_sigs_t)((boss_sigs_t)1 << ((sizeof(boss_sigs_t)*8)-1))
+#define SIG_BOSS_MSB_BIT  (boss_sigs_t)((boss_sigs_t)1 << ((sizeof(boss_sigs_t)*8)-1))
 
-#define BOSS_SIG_TIMEOUT          (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 0)  /* 타임아웃(슬립) */
-#define BOSS_SIG_SEM_OBTAIN       (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 1)  /* 세마포어 */
-#define BOSS_SIG_MBOX_PEND_DONE   (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 2)  /* MBox 완료 */
-// 예비(Reserve)    BOSS_SIG_RESERVE    (BOSS_SIG_MSB_BIT >> 3)   /* 예비     */
+#define SIG_BOSS_TIMEOUT      (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 0)  /* 타임아웃(슬립) */
+#define SIG_BOSS_SUCCESS      (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 1)  /* 완료 (성공)    */
+//#define SIG_BOSS_RESERVE_MSB2   (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 2)  /* 예비(2)    */
+//#define SIG_BOSS_RESERVE_MSB3   (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 3)  /* 예비(3)    */
 
 /*---------------------------------------------------------------------------*/
 /*                        TCB (Task Control Block)                           */

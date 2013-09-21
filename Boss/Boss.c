@@ -300,7 +300,7 @@ static void _timeout_callback(boss_tmr_t *p_tmr)
 {
   _timeout_tmr_t *p_timeout = (_timeout_tmr_t *)p_tmr;
 
-  Boss_sig_send(p_timeout->p_tcb, BOSS_SIG_TIMEOUT);
+  Boss_sig_send(p_timeout->p_tcb, SIG_BOSS_TIMEOUT);
 }
 
 
@@ -311,14 +311,14 @@ boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeou
 {
   _timeout_tmr_t  timeout_tmr;
   
-  Boss_sig_clear(Boss_self(), BOSS_SIG_TIMEOUT);
+  Boss_sig_clear(Boss_self(), SIG_BOSS_TIMEOUT);
   
   timeout_tmr.tmr.prev  = _BOSS_NULL;
   timeout_tmr.p_tcb     = Boss_self();
   
   Boss_tmr_start((boss_tmr_t *)&timeout_tmr, timeout, _timeout_callback);
 
-  _Boss_wait_sig_forever(wait_sigs | BOSS_SIG_TIMEOUT);
+  _Boss_wait_sig_forever(wait_sigs | SIG_BOSS_TIMEOUT);
   
   Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
 
