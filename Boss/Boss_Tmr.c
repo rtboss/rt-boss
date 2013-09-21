@@ -30,7 +30,13 @@ boss_sigs_t _tmr_cb_sig   = 0;
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
+#ifdef _BOSS_RR_QUANTUM_MS
+void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms);
+#endif
 
+#ifdef _BOSS_SPY_
+void _Boss_spy_elapse_tick(boss_u32_t tick_ms);
+#endif
 
 /*===========================================================================
     _   B O S S _ T I M E R _ C B _ T A S K _ S E T
@@ -50,6 +56,14 @@ void _Boss_timer_cb_task_set(boss_tcb_t *p_cb_tcb, boss_sigs_t cb_sig)
 void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
 {
   boss_tmr_t  *p_tmr;
+
+  #ifdef _BOSS_RR_QUANTUM_MS
+  _Boss_sched_rr_quantum_tick(tick_ms);
+  #endif
+  
+  #ifdef _BOSS_SPY_
+  _Boss_spy_elapse_tick(tick_ms);
+  #endif
   
   BOSS_IRQ_DISABLE();
   p_tmr = _boss_timer_act_list;

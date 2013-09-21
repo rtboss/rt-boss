@@ -77,10 +77,6 @@ void Boss_start(void);
 
 boss_tcb_t *Boss_self(void);
 
-#ifdef _BOSS_RR_QUANTUM_MS
-void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms);
-#endif
-
 boss_sigs_t Boss_wait(boss_sigs_t wait_sigs);
 void Boss_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 void Boss_sigs_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
