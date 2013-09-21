@@ -107,7 +107,7 @@ void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
   if(_boss_timer_exe_list != _BOSS_NULL)
   {
     if(_p_tmr_cb_tcb != _BOSS_NULL) {
-      Boss_send(_p_tmr_cb_tcb, _tmr_cb_sig);
+      Boss_sig_send(_p_tmr_cb_tcb, _tmr_cb_sig);
     } else {
       _Boss_timer_callback_execute();
     }

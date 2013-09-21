@@ -86,14 +86,14 @@ boss_reg_t Boss_mbox_pend(boss_mbox_q_t *mbox_q, void *p_mbox,
   
   h_mbox->p_rsp = p_rsp;
   h_mbox->sender = Boss_self();
-  Boss_sigs_clear(Boss_self(), BOSS_SIG_MBOX_PEND_DONE);
+  Boss_sig_clear(Boss_self(), BOSS_SIG_MBOX_PEND_DONE);
   _Boss_mbox_insert(mbox_q, h_mbox);
-  Boss_send(mbox_q->owner_tcb, mbox_q->mbox_sig);
+  Boss_sig_send(mbox_q->owner_tcb, mbox_q->mbox_sig);
   
-  sigs = Boss_wait_sleep(BOSS_SIG_MBOX_PEND_DONE, timeout);   /* 대기  */
+  sigs = Boss_sig_wait(BOSS_SIG_MBOX_PEND_DONE, timeout);   /* 대기  */
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
-  sigs = sigs | Boss_sigs_receive(BOSS_SIG_MBOX_PEND_DONE);
+  sigs = sigs | Boss_sig_receive(BOSS_SIG_MBOX_PEND_DONE);
   if(sigs & BOSS_SIG_MBOX_PEND_DONE)  /* 처리 완료 */
   {
     BOSS_IRQ_RESTORE_SR(irq_storage);
@@ -161,7 +161,7 @@ boss_reg_t Boss_mbox_done(void *p_mbox, boss_uptr_t rsp)
   if(h_mbox->p_rsp != _BOSS_NULL)
   {
     *(h_mbox->p_rsp) = rsp;
-    Boss_send(h_mbox->sender, BOSS_SIG_MBOX_PEND_DONE);
+    Boss_sig_send(h_mbox->sender, BOSS_SIG_MBOX_PEND_DONE);
 
     mbox_done = _BOSS_SUCCESS;
   }
