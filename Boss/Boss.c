@@ -271,21 +271,21 @@ void Boss_sleep(boss_tmr_ms_t wait_ms)
   (void)Boss_wait_sleep( (boss_sigs_t)0, wait_ms);
 }
 
-/* Sleep Timer */
+/* Timeout Timer */
 typedef struct {
   boss_tmr_t  tmr;
   boss_tcb_t  *p_tcb;
-} _sleep_tmr_t;
+} _timeout_tmr_t;
 
 
 /*===========================================================================
-    _ S L E E P _ C A L L B A C K
+    _ T I M E O U T _ C A L L B A C K
 ---------------------------------------------------------------------------*/
-void _sleep_callback(boss_tmr_t *p_tmr)
+static void _timeout_callback(boss_tmr_t *p_tmr)
 {
-  _sleep_tmr_t *p_sleep_tmr = (_sleep_tmr_t *)p_tmr;
-
-  Boss_send(p_sleep_tmr->p_tcb, BOSS_SIG_SLEEP);
+  _timeout_tmr_t *p_timeout = (_timeout_tmr_t *)p_tmr;
+  
+  Boss_send(p_timeout->p_tcb, BOSS_SIG_TIMEOUT);
 }
 
 
@@ -298,20 +298,20 @@ boss_sigs_t Boss_wait_sleep(boss_sigs_t wait_sigs,  boss_tmr_ms_t wait_ms)
   
   if(wait_ms != 0)
   {
-    _sleep_tmr_t  sleep_tmr;
+    _timeout_tmr_t  timeout_tmr;
 
-    sleep_tmr.tmr.prev  = _BOSS_NULL;
-    sleep_tmr.p_tcb     = Boss_self();
+    timeout_tmr.tmr.prev  = _BOSS_NULL;
+    timeout_tmr.p_tcb     = Boss_self();
     
-    Boss_tmr_start((boss_tmr_t *)&sleep_tmr, wait_ms, _sleep_callback);
+    Boss_tmr_start((boss_tmr_t *)&timeout_tmr, wait_ms, _timeout_callback);
 
-    recv_sigs = Boss_wait(wait_sigs | BOSS_SIG_SLEEP);
+    recv_sigs = Boss_wait(wait_sigs | BOSS_SIG_TIMEOUT);
 
-    if( (recv_sigs & BOSS_SIG_SLEEP) == 0 ) {
-      Boss_tmr_stop((boss_tmr_t *)&sleep_tmr);
+    if( (recv_sigs & BOSS_SIG_TIMEOUT) == 0 ) {
+      Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
     }
     
-    recv_sigs = recv_sigs & ~BOSS_SIG_SLEEP;   /* BOSS_SIG_SLEEP 시그널 클리어 */
+    recv_sigs = recv_sigs & ~BOSS_SIG_TIMEOUT;   /* BOSS_SIG_TIMEOUT 시그널 클리어 */
   }
   else
   {

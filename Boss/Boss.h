@@ -25,6 +25,8 @@
 #define _BOSS_SUCCESS       ( 0)
 #define _BOSS_FAILURE       (-1)    /* (32bit=0xFFFFFFFF) / (16bit=0xFFFF) */
 
+#define WAIT_FOREVER        ((boss_tmr_ms_t)0)
+
 /*---------------------------------------------------------------------------*/
 /*                         RT-BOSS 시그널 비트 정의                          */
 /*                                                                           */
@@ -33,7 +35,7 @@
 /*---------------------------------------------------------------------------*/
 #define BOSS_SIG_MSB_BIT  (boss_sigs_t)((boss_sigs_t)1 << ((sizeof(boss_sigs_t)*8)-1))
 
-#define BOSS_SIG_SLEEP            (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 0)  /* 슬립     */
+#define BOSS_SIG_TIMEOUT          (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 0)  /* 타임아웃(슬립) */
 #define BOSS_SIG_SEM_OBTAIN       (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 1)  /* 세마포어 */
 #define BOSS_SIG_MBOX_PEND_DONE   (boss_sigs_t)(BOSS_SIG_MSB_BIT >> 2)  /* MBox 완료 */
 // 예비(Reserve)    BOSS_SIG_RESERVE    (BOSS_SIG_MSB_BIT >> 3)   /* 예비     */
