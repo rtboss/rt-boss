@@ -26,6 +26,7 @@ typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
 
 typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 
+typedef boss_u16_t          boss_flags_t;     /* 플래그                 */
 
 /*===========================================================================*/
 /*                           RT-BOSS 사용자 설정                             */
@@ -122,6 +123,7 @@ typedef enum {
 #include "Boss.h"
 #include "Boss_Mem.h"
 #include "Boss_Tmr.h"
+#include "Boss_Flag.h"
 #include "Boss_Q_Msg.h"
 #include "Boss_Q_MBox.h"
 #include "Boss_Sem.h"
