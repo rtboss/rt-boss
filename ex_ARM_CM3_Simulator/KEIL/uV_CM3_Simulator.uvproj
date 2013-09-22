@@ -408,6 +408,11 @@
               <FilePath>..\..\Boss\Boss.c</FilePath>
             </File>
             <File>
+              <FileName>Boss_Flag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Boss\Boss_Flag.c</FilePath>
+            </File>
+            <File>
               <FileName>Boss_Mem.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Boss\Boss_Mem.c</FilePath>
