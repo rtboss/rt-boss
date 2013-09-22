@@ -152,7 +152,7 @@ boss_stk_t *_Boss_switch_current_tcb(boss_stk_t *cur_task_sp)
 /*===========================================================================
     B O S S _ S C H E D U L E
 ---------------------------------------------------------------------------*/
-static void _Boss_schedule(void)
+void _Boss_schedule(void)
 {
   if( (_sched_locking == 0) && (_current_tcb != _sched_tcb_list) )
   {
