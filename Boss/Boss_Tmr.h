@@ -16,8 +16,6 @@
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
 /*---------------------------------------------------------------------------*/
-#define BOSS_TMR_INFINITE               (~(boss_tmr_ms_t)0)
-
 typedef struct boss_tmr_struct {
   struct boss_tmr_struct  *prev;
   struct boss_tmr_struct  *next;
