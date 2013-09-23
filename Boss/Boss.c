@@ -263,6 +263,43 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
 */
 
 /*===========================================================================
+    _   B O S S _ S E T T I N G _ S I G N A L
+---------------------------------------------------------------------------*/
+void _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs)
+{
+  BOSS_IRQ_DISABLE();
+  p_tcb->sigs = p_tcb->sigs | sigs;
+
+  if( p_tcb->wait & sigs ) {
+      _Boss_sched_list_insert(p_tcb);
+  }
+  BOSS_IRQ_RESTORE();
+}
+
+
+/*===========================================================================
+    B O S S _ S I G _ S E N D
+---------------------------------------------------------------------------*/
+void Boss_sig_send(boss_tcb_t *p_tcb, boss_sigs_t sigs)
+{
+  _Boss_setting_signal(p_tcb, sigs);
+  
+  _Boss_schedule();       /* 문맥전환 실행  */
+}
+
+
+/*===========================================================================
+    B O S S _ S I G _ C L E A R
+---------------------------------------------------------------------------*/
+void Boss_sig_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs)
+{
+  BOSS_IRQ_DISABLE();
+  p_tcb->sigs = p_tcb->sigs & ~sigs;
+  BOSS_IRQ_RESTORE();
+}
+
+
+/*===========================================================================
     _   B O S S _ W A I T _ S I G _ F O R E V E R
 ---------------------------------------------------------------------------*/
 void _Boss_wait_sig_forever(boss_sigs_t wait_sigs)
@@ -364,43 +401,6 @@ boss_sigs_t Boss_sig_receive(boss_sigs_t wait_sigs)
   BOSS_IRQ_RESTORE();
   
   return recv_sigs;
-}
-
-
-/*===========================================================================
-    _   B O S S _ S E T T I N G _ S I G N A L
----------------------------------------------------------------------------*/
-void _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs)
-{
-  BOSS_IRQ_DISABLE();
-  p_tcb->sigs = p_tcb->sigs | sigs;
-
-  if( p_tcb->wait & sigs ) {
-      _Boss_sched_list_insert(p_tcb);
-  }
-  BOSS_IRQ_RESTORE();
-}
-
-
-/*===========================================================================
-    B O S S _ S I G _ S E N D
----------------------------------------------------------------------------*/
-void Boss_sig_send(boss_tcb_t *p_tcb, boss_sigs_t sigs)
-{
-  _Boss_setting_signal(p_tcb, sigs);
-  
-  _Boss_schedule();       /* 문맥전환 실행  */
-}
-
-
-/*===========================================================================
-    B O S S _ S I G _ C L E A R
----------------------------------------------------------------------------*/
-void Boss_sig_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs)
-{
-  BOSS_IRQ_DISABLE();
-  p_tcb->sigs = p_tcb->sigs & ~sigs;
-  BOSS_IRQ_RESTORE();
 }
 
 
