@@ -18,6 +18,8 @@
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
+boss_msg_q_t  test_msg_q;
+boss_msg_t    test_msg_fifo[10];
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
@@ -30,9 +32,6 @@ void Boss_device_init(void);
 boss_tcb_t    aa_tcb;
 boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
 
-boss_msg_q_t  aa_msg_q;
-_msg_fifo_t   aa_msg_fifo[10];
-
 
 /*===============================================
     A A _ M A I N
@@ -41,38 +40,35 @@ int aa_main(void *p_arg)
 {  
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("aa_msg_q Init\n");
-  Boss_msg_q_init(&aa_msg_q, aa_msg_fifo, sizeof(aa_msg_fifo), Boss_self(), SIG_00_BIT);
+  PRINTF("test_msg_q Init\n");
+  Boss_msg_q_init(&test_msg_q, test_msg_fifo, sizeof(test_msg_fifo), MSG_Q_PRIORITY);
+
+  Boss_sleep(100); // BB TASK init wait
   
   for(;;)
   {
-    boss_sigs_t sigs = Boss_wait(SIG_00_BIT);
+    boss_msg_t msg;
 
-    if(sigs & SIG_00_BIT)
+    PRINTF("\n[%s] MSG Q Wait\n", Boss_self()->name);
+    msg = Boss_msg_wait(&test_msg_q, 5000);   /* 5초 타임아웃 */
+
+    switch(msg.m_cmd)
     {
-      msg_cmd_t   m_cmd;
-      boss_uptr_t param;
+      case M_CMD_EMPTY :  // 타임아웃
+        PRINTF("[%s] MSG Q Wait Timeout\n", Boss_self()->name);
+        break;
+
+      case M_CMD_1 :
+        PRINTF("[%s] m_cmd = M_CMD_1 : param = %d\n", Boss_self()->name, msg.param);
+        break;
       
-      while( M_CMD_EMPTY != (m_cmd = Boss_msg_receive(&aa_msg_q, &param)) )
-      {
-        switch(m_cmd)
-        {
-          case M_CMD_1 :
-            PRINTF("M_CMD_1 : param (bb_count = %d)\n", param);
-            break;
-            
-          default :
-            BOSS_ASSERT(_BOSS_FALSE);
-            break;
-        }
-      }
+      default :
+        BOSS_ASSERT(_BOSS_FALSE);   // Error : 유효하지않은 메시지 명령어
+        break;
     }
-    
   }
-  
-  PRINTF("[%s TASK] Exit \n", Boss_self()->name);
-  
-  return 0;
+    
+  return 0;   // Task Exit
 }
 
 
@@ -93,19 +89,21 @@ int bb_main(void *p_arg)
   
   for(;;)
   {
-    Boss_sleep(1000);  /* 1 Sec */
+    Boss_sleep(7000);  // 타임아웃 테스트
+    
+    Boss_sleep(2000);  /* 2초 */
     
     ++bb_count;
-
-    if( _BOSS_SUCCESS != Boss_msg_send(&aa_msg_q, M_CMD_1, (boss_uptr_t)bb_count) )
+    
+    PRINTF("[%s] Boss_msg_send( param = %d )\n", Boss_self()->name, bb_count);
+    
+    if( _BOSS_SUCCESS != Boss_msg_send(&test_msg_q, M_CMD_1, (boss_uptr_t)bb_count) )
     {
-      PRINTF("FAILURE : 메시지 FULL\n");
+      PRINTF("FAILURE : MSG Q FIFO FULL\n");
     }
   }
-
-  PRINTF("[%s TASK] Exit \n", Boss_self()->name);
   
-  return 0;
+  return 0;   // Task Exit
 }
 
 
@@ -159,39 +157,39 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            aa_msg_q Init
+            test_msg_q Init
             [BB TASK] Init 
-            M_CMD_1 : param (bb_count = 1)
-            M_CMD_1 : param (bb_count = 2)
-            M_CMD_1 : param (bb_count = 3)
-            M_CMD_1 : param (bb_count = 4)
-            M_CMD_1 : param (bb_count = 5)
-            M_CMD_1 : param (bb_count = 6)
-            M_CMD_1 : param (bb_count = 7)
-            M_CMD_1 : param (bb_count = 8)
-            M_CMD_1 : param (bb_count = 9)
-            M_CMD_1 : param (bb_count = 10)
-            M_CMD_1 : param (bb_count = 11)
-            M_CMD_1 : param (bb_count = 12)
-            M_CMD_1 : param (bb_count = 13)
-            M_CMD_1 : param (bb_count = 14)
-            M_CMD_1 : param (bb_count = 15)
-            M_CMD_1 : param (bb_count = 16)
-            M_CMD_1 : param (bb_count = 17)
-            M_CMD_1 : param (bb_count = 18)
-            M_CMD_1 : param (bb_count = 19)
-            M_CMD_1 : param (bb_count = 20)
-            M_CMD_1 : param (bb_count = 21)
-            M_CMD_1 : param (bb_count = 22)
-            M_CMD_1 : param (bb_count = 23)
-            M_CMD_1 : param (bb_count = 24)
-            M_CMD_1 : param (bb_count = 25)
-            M_CMD_1 : param (bb_count = 26)
-            M_CMD_1 : param (bb_count = 27)
-            M_CMD_1 : param (bb_count = 28)
-            M_CMD_1 : param (bb_count = 29)
-            M_CMD_1 : param (bb_count = 30)
-            M_CMD_1 : param (bb_count = 31)
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 1 )
+            [AA] m_cmd = M_CMD_1 : param = 1
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 2 )
+            [AA] m_cmd = M_CMD_1 : param = 2
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 3 )
+            [AA] m_cmd = M_CMD_1 : param = 3
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 4 )
+            [AA] m_cmd = M_CMD_1 : param = 4
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 5 )
+            [AA] m_cmd = M_CMD_1 : param = 5
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 6 )
+            [AA] m_cmd = M_CMD_1 : param = 6
+            
+            [AA] MSG Q Wait
+            [BB] Boss_msg_send( param = 7 )
+            [AA] m_cmd = M_CMD_1 : param = 7
+            
+            [AA] MSG Q Wait
+
                 ------- 중략 -------
 
 */
