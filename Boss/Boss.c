@@ -337,7 +337,7 @@ static void _timeout_callback(boss_tmr_t *p_tmr)
 {
   _timeout_tmr_t *p_timeout = (_timeout_tmr_t *)p_tmr;
 
-  Boss_sig_send(p_timeout->p_tcb, SIG_BOSS_TIMEOUT);
+  _Boss_setting_signal(p_timeout->p_tcb, SIG_BOSS_TIMEOUT);
 }
 
 
