@@ -40,7 +40,7 @@ int aa_main(void *p_arg)
 {  
   PRINTF("[세마포어 초기화]\n\n");
 
-  Boss_sem_init(&sem_test);
+  Boss_sem_init(&sem_test, 1);
   
   for(;;)
   {    
