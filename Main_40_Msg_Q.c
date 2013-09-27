@@ -89,7 +89,7 @@ int bb_main(void *p_arg)
   
   for(;;)
   {
-    Boss_sleep(7000);  // 타임아웃 테스트
+    //Boss_sleep(7000);  // 타임아웃 테스트
     
     Boss_sleep(2000);  /* 2초 */
     
