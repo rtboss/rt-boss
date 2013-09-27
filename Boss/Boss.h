@@ -82,7 +82,6 @@ void        Boss_sleep(boss_tmr_ms_t timeout);
 
 void        Boss_sig_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 void        Boss_sig_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-boss_sigs_t Boss_sig_receive(boss_sigs_t wait_sigs);
 boss_sigs_t Boss_sig_wait(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
 
 void Boss_task_create( int (*task)(void *p_arg), void *p_arg, 

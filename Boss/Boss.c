@@ -406,23 +406,6 @@ boss_sigs_t Boss_sig_wait(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout)
 }
 
 
-/*===========================================================================
-    B O S S _ S I G _ R E C E I V E
----------------------------------------------------------------------------*/
-boss_sigs_t Boss_sig_receive(boss_sigs_t wait_sigs)
-{
-  boss_sigs_t recv_sigs;
-  boss_tcb_t  *cur_tcb = Boss_self();
-  
-  BOSS_IRQ_DISABLE();
-  recv_sigs     = cur_tcb->sigs & wait_sigs;
-  cur_tcb->sigs = cur_tcb->sigs & ~recv_sigs;   /* 수신한 시그널 클리어 */
-  BOSS_IRQ_RESTORE();
-  
-  return recv_sigs;
-}
-
-
 /*
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 *                                [ TASK ]                                     *
