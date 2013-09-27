@@ -24,7 +24,6 @@
 /*---------------------------------------------------------------------------*/
 void          _Boss_schedule(void);
 void          _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-void          _Boss_wait_sig_forever(boss_sigs_t wait_sigs);
 boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
 
 
@@ -43,32 +42,12 @@ void Boss_sem_init(boss_sem_t *p_sem, boss_reg_t sem_max)
 
 
 /*===========================================================================
-    B O S S _ S E M _ A C C E P T
----------------------------------------------------------------------------*/
-boss_reg_t Boss_sem_accept(boss_sem_t *p_sem)
-{  
-  boss_reg_t  irq_storage;
-  
-  BOSS_IRQ_DISABLE_SR(irq_storage);
-  if(p_sem->sem_count != 0)
-  {
-    p_sem->sem_count--;                 /* 세마포어 할당 */
-    BOSS_IRQ_RESTORE_SR(irq_storage);
-
-    return _BOSS_SUCCESS;
-  }
-  BOSS_IRQ_RESTORE_SR(irq_storage);
-
-  return (boss_reg_t)_BOSS_FAILURE;
-}
-
-
-/*===========================================================================
     B O S S _ S E M _ O B T A I N
 ---------------------------------------------------------------------------*/
 boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
 {
-  _sem_wait_t sem_wait;
+  boss_reg_t  obtain = (boss_reg_t)_BOSS_FAILURE;
+  _sem_link_t sem_wait;
   boss_reg_t  irq_storage;
   
   Boss_sig_clear( Boss_self(), SIG_BOSS_SUCCESS );
@@ -81,46 +60,41 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
   if(p_sem->sem_count != 0)
   {
     p_sem->sem_count--;
-    BOSS_IRQ_RESTORE_SR(irq_storage);
-
-    return _BOSS_SUCCESS;                                   /* 세마포어 획득 */
+    obtain = _BOSS_SUCCESS;                                   /* 세마포어 획득 */
   }
-  
-  /* 세마포어 대기 리스트에 추가 */
-  if( p_sem->wait_list != _BOSS_NULL ) {
-      p_sem->wait_list->prev = &sem_wait;
-      sem_wait.next = p_sem->wait_list;
-  }
-  p_sem->wait_list = &sem_wait;
-  BOSS_IRQ_RESTORE_SR(irq_storage);
-
-  if(WAIT_FOREVER == timeout) {
-      _Boss_wait_sig_forever(SIG_BOSS_SUCCESS);                 /* 무한 대기 */
-  } else {
-      (void)_Boss_wait_sig_timeout(SIG_BOSS_SUCCESS, timeout);  /* 타임아웃 대기  */
-  }
-  
-  BOSS_IRQ_DISABLE_SR(irq_storage);
-  if( Boss_self()->sigs & SIG_BOSS_SUCCESS )
+  else if( timeout != NO_WAIT )
   {
+    /* 세마포어 대기 리스트에 추가 */
+    if( p_sem->wait_list != _BOSS_NULL ) {
+        p_sem->wait_list->prev = &sem_wait;
+        sem_wait.next = p_sem->wait_list;
+    }
+    p_sem->wait_list = &sem_wait;
     BOSS_IRQ_RESTORE_SR(irq_storage);
     
-    return _BOSS_SUCCESS;                                   /* 세마포어 획득 */
-  }
-
-  /* 세마포어 대기 리스트에서 제거 ( 타임아웃 )*/
-  if( sem_wait.prev == _BOSS_NULL ) {
-      p_sem->wait_list    = sem_wait.next;
-  } else {
-      sem_wait.prev->next = sem_wait.next;
-  }
-  
-  if( sem_wait.next != _BOSS_NULL ) {
-      sem_wait.next->prev = sem_wait.prev;
+    (void)_Boss_wait_sig_timeout(SIG_BOSS_SUCCESS, timeout);  /* 대기 (waiting)*/
+    
+    BOSS_IRQ_DISABLE_SR(irq_storage);
+    if( Boss_self()->sigs & SIG_BOSS_SUCCESS )
+    {
+      obtain = _BOSS_SUCCESS;                                 /* 세마포어 획득 */
+    }
+    else                                                  /* 세마포어 타임아웃 */
+    {
+      if( sem_wait.prev == _BOSS_NULL ) {
+          p_sem->wait_list    = sem_wait.next;
+      } else {
+          sem_wait.prev->next = sem_wait.next;
+      }
+      
+      if( sem_wait.next != _BOSS_NULL ) {
+          sem_wait.next->prev = sem_wait.prev;
+      }
+    }
   }
   BOSS_IRQ_RESTORE_SR(irq_storage);
 
-  return (boss_reg_t)_BOSS_FAILURE;               /* 세마포어 실패 (타임아웃) */
+  return obtain;
 }
 
 
@@ -129,22 +103,13 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
 ---------------------------------------------------------------------------*/
 void Boss_sem_release(boss_sem_t *p_sem)
 {  
-  boss_reg_t  irq_storage;
-  
   BOSS_ASSERT(p_sem->sem_count < p_sem->sem_max);
 
-  BOSS_IRQ_DISABLE_SR(irq_storage);
-  if(p_sem->wait_list == _BOSS_NULL)
+  BOSS_IRQ_DISABLE();
+  if(p_sem->wait_list != _BOSS_NULL)
   {
-    p_sem->sem_count++;
-    BOSS_IRQ_RESTORE_SR(irq_storage);
-    
-    return;
-  }
-  else
-  {
-    _sem_wait_t *p_best = p_sem->wait_list;
-    _sem_wait_t *p_find = p_best->next;
+    _sem_link_t *p_best = p_sem->wait_list;
+    _sem_link_t *p_find = p_best->next;
 
     while(p_find != _BOSS_NULL)         /* Find Best */
     {
@@ -167,7 +132,11 @@ void Boss_sem_release(boss_sem_t *p_sem)
     
     _Boss_setting_signal(p_best->p_tcb, SIG_BOSS_SUCCESS);
   }
-  BOSS_IRQ_RESTORE_SR(irq_storage);
+  else
+  {
+    p_sem->sem_count++;
+  }
+  BOSS_IRQ_RESTORE();
 
-  _Boss_schedule();       /* 문맥전환 실행  */
+  _Boss_schedule();
 }
