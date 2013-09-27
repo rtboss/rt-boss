@@ -125,7 +125,6 @@ typedef enum {
 #include "Boss_Tmr.h"
 #include "Boss_Flag.h"
 #include "Boss_Q_Msg.h"
-#include "Boss_Q_MBox.h"
 #include "Boss_Sem.h"
 #include "Boss_SPY.h"
 
