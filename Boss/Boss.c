@@ -325,11 +325,7 @@ void _Boss_wait_sig_forever(boss_sigs_t wait_sigs)
 
 
 /* Timeout Timer */
-typedef struct {
-  boss_tmr_t  tmr;
-  boss_tcb_t  *p_tcb;
-} _timeout_tmr_t;
-
+typedef struct { boss_tmr_t tmr; boss_tcb_t *p_tcb; } _timeout_tmr_t;
 /*===========================================================================
     _ T I M E O U T _ C A L L B A C K
 ---------------------------------------------------------------------------*/
@@ -346,29 +342,43 @@ static void _timeout_callback(boss_tmr_t *p_tmr)
 ---------------------------------------------------------------------------*/
 boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout)
 {
-  _timeout_tmr_t  timeout_tmr;
+  BOSS_ASSERT(timeout != NO_WAIT);        // timeout : 0x00000000
   
-  Boss_sig_clear(Boss_self(), SIG_BOSS_TIMEOUT);
-  
-  timeout_tmr.tmr.prev  = _BOSS_NULL;
-  timeout_tmr.p_tcb     = Boss_self();
-  
-  Boss_tmr_start((boss_tmr_t *)&timeout_tmr, timeout, _timeout_callback);
+  if( timeout == WAIT_FOREVER )           // timeout : 0xffffffff
+  {
+    _Boss_wait_sig_forever(wait_sigs);    
+  }
+  else
+  {                                       // timeout : 1 ~ 0xfffffffe
+    _timeout_tmr_t  timeout_tmr;
+    
+    Boss_sig_clear(Boss_self(), SIG_BOSS_TIMEOUT);
+    
+    timeout_tmr.tmr.prev  = _BOSS_NULL;
+    timeout_tmr.p_tcb     = Boss_self();
+    
+    Boss_tmr_start((boss_tmr_t *)&timeout_tmr, timeout, _timeout_callback);
 
-  _Boss_wait_sig_forever(wait_sigs | SIG_BOSS_TIMEOUT);
-  
-  Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
+    _Boss_wait_sig_forever(wait_sigs | SIG_BOSS_TIMEOUT);
+    
+    Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
 
-  return timeout_tmr.tmr.tmr_ms;            /* 남은 시간 반환 */
+    timeout = timeout_tmr.tmr.tmr_ms;            /* 남은 시간 반환 */
+  }
+  
+  return timeout;
 }
 
 
 /*===========================================================================
     B O S S _ S L E E P
 ---------------------------------------------------------------------------*/
-void Boss_sleep(boss_tmr_ms_t wait_ms)
-{
-  (void)_Boss_wait_sig_timeout( (boss_sigs_t)0, wait_ms);
+void Boss_sleep(boss_tmr_ms_t timeout)
+{  
+  BOSS_ASSERT(timeout != NO_WAIT);                        // timeout : 0x00000000
+  BOSS_ASSERT(timeout != WAIT_FOREVER);                   // timeout : 0xffffffff
+  
+  (void)_Boss_wait_sig_timeout((boss_sigs_t)0, timeout);  // timeout : 1 ~ 0xfffffffe
 }
 
 
@@ -377,13 +387,22 @@ void Boss_sleep(boss_tmr_ms_t wait_ms)
 ---------------------------------------------------------------------------*/
 boss_sigs_t Boss_sig_wait(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout)
 {
-  if(WAIT_FOREVER == timeout) {
-      _Boss_wait_sig_forever(wait_sigs);
-  } else {
-      (void)_Boss_wait_sig_timeout(wait_sigs, timeout);
+  boss_sigs_t recv_sigs;
+  boss_tcb_t  *cur_tcb;
+  
+  if(timeout != NO_WAIT)
+  {
+    (void)_Boss_wait_sig_timeout(wait_sigs, timeout);
   }
-
-  return Boss_sig_receive(wait_sigs);
+  
+  cur_tcb = Boss_self();
+  
+  BOSS_IRQ_DISABLE();
+  recv_sigs     = cur_tcb->sigs & wait_sigs;
+  cur_tcb->sigs = cur_tcb->sigs & ~recv_sigs;   /* 수신한 시그널 클리어 */
+  BOSS_IRQ_RESTORE();
+  
+  return recv_sigs;
 }
 
 
