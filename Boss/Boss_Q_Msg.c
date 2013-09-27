@@ -26,7 +26,8 @@ typedef enum {
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void          _Boss_wait_sig_forever(boss_sigs_t wait_sigs);
+void          _Boss_schedule(void);
+void          _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
 
 
@@ -36,11 +37,10 @@ boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeou
 void Boss_msg_q_init(boss_msg_q_t *msg_q, boss_msg_t *p_fifo,
                                     boss_uptr_t fifo_bytes, _msg_q_opt_t q_opt)
 {
-  msg_q->wait_list  = _BOSS_NULL;
-  
   if(p_fifo != _BOSS_NULL) {
       msg_q->msg_fifo = p_fifo;
       msg_q->fifo_max = fifo_bytes / sizeof(boss_msg_t);
+      BOSS_ASSERT(0 < msg_q->fifo_max);
   } else {
       msg_q->msg_fifo = _BOSS_NULL;
       msg_q->fifo_max = 0;
@@ -51,6 +51,8 @@ void Boss_msg_q_init(boss_msg_q_t *msg_q, boss_msg_t *p_fifo,
   msg_q->fifo_tail  = 0;
 
   msg_q->q_opt      = q_opt;
+  
+  msg_q->wait_list  = _BOSS_NULL;
 }
 
 
@@ -64,15 +66,15 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
   boss_reg_t  irq_storage;
   
   BOSS_IRQ_DISABLE_SR(irq_storage);
-  if(msg_q->wait_list != _BOSS_NULL)      /* Msg Pend TCB가 있을때 직접 전송 */
+  if(msg_q->wait_list != _BOSS_NULL)      /* Msg wait TCB가 있을때 직접 전송 */
   {
-    _msg_wait_t *p_best = msg_q->wait_list;
+    _msg_link_t *p_best = msg_q->wait_list;
 
-    if(msg_q->q_opt == MSG_Q_PRIORITY)
+    if(msg_q->q_opt == MSG_Q_PRIORITY)            /* Find Best */
     {
-      _msg_wait_t *p_find = p_best->next;
+      _msg_link_t *p_find = p_best->next;
       
-      while(p_find != _BOSS_NULL)         /* Find Best */
+      while(p_find != _BOSS_NULL)
       {
         if(p_find->p_tcb->prio <= p_best->p_tcb->prio) {
             p_best = p_find;
@@ -80,15 +82,15 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
         p_find = p_find->next;
       }
     }
-    else
+    else  /* MSG_Q_FIFO */                        /* Find First */
     {
-      while(p_best->next != _BOSS_NULL)  /* Find First */
+      while(p_best->next != _BOSS_NULL)
       {
         p_best = p_best->next;
       }
     }
     
-    /* 메시지 대기 리스트에서 제거 (메시지 전송 완료) */
+    /* 메시지 대기 리스트에서 제거 (메시지 전송) */
     if(p_best->prev == _BOSS_NULL) {
         msg_q->wait_list    = p_best->next;
     } else {
@@ -99,19 +101,14 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
         p_best->next->prev = p_best->prev;
     }
 
-    _Boss_sched_lock();
-    BOSS_IRQ_RESTORE_SR(irq_storage);
-    
     p_best->msg.m_cmd = m_cmd;
     p_best->msg.param = param;
     
-    Boss_sig_send(p_best->p_tcb, SIG_BOSS_SUCCESS);
-    _Boss_sched_free();
+    _Boss_setting_signal(p_best->p_tcb, SIG_BOSS_SUCCESS);
     
-    return _BOSS_SUCCESS;
+    sent = _BOSS_SUCCESS;
   }
-
-  if(msg_q->fifo_count < msg_q->fifo_max)     /* Msg fifo 에 넣는다 */
+  else if(msg_q->fifo_count < msg_q->fifo_max)     /* Msg fifo 에 넣는다 */
   {
     if( send_opt == __MSG_SEND__REAR )        // __MSG_SEND__REAR
     {
@@ -141,6 +138,8 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
   }
   BOSS_IRQ_RESTORE_SR(irq_storage);
   
+  _Boss_schedule();
+  
   return sent;
 }
 
@@ -164,38 +163,11 @@ boss_reg_t Boss_msg_send_front(boss_msg_q_t *msg_q, msg_cmd_t m_cmd, boss_uptr_t
 
 
 /*===========================================================================
-    B O S S _ M S G _ R E C E I V E
----------------------------------------------------------------------------*/
-boss_msg_t Boss_msg_receive(boss_msg_q_t *msg_q)
-{
-  boss_msg_t  msg;
-
-  msg.m_cmd = M_CMD_EMPTY;
-  
-  BOSS_IRQ_DISABLE();
-  if(msg_q->fifo_count != 0)                    /* 메시지가 있을때 */
-  {
-    boss_u08_t  tail_idx = msg_q->fifo_tail;
-
-    msg.m_cmd = msg_q->msg_fifo[tail_idx].m_cmd;
-    msg.param = msg_q->msg_fifo[tail_idx].param;
-
-    msg_q->fifo_tail = ++tail_idx %  msg_q->fifo_max;
-
-    msg_q->fifo_count--;
-  }
-  BOSS_IRQ_RESTORE();
-
-  return msg;
-}
-
-
-/*===========================================================================
     B O S S _ M S G _ W A I T
 ---------------------------------------------------------------------------*/
 boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
 {  
-  _msg_wait_t   msg_wait;
+  _msg_link_t   msg_wait;
   boss_reg_t    irq_storage;
   
   Boss_sig_clear( Boss_self(), SIG_BOSS_SUCCESS );
@@ -207,11 +179,17 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
   //msg_wait.msg.param  = 0;
   
   BOSS_IRQ_DISABLE_SR(irq_storage);
-  if(msg_q->fifo_count != 0)                                      /* 메시지가 있을때 */
-  {    
-    msg_wait.msg = Boss_msg_receive(msg_q);
+  if(msg_q->fifo_count != 0)                                    /* 메시지가 있을때 */
+  {
+    boss_u08_t  tail_idx = msg_q->fifo_tail;
+
+    msg_wait.msg.m_cmd = msg_q->msg_fifo[tail_idx].m_cmd;
+    msg_wait.msg.param = msg_q->msg_fifo[tail_idx].param;
+
+    msg_q->fifo_tail = ++tail_idx %  msg_q->fifo_max;
+    msg_q->fifo_count--;    
   }
-  else
+  else if( timeout != NO_WAIT )
   {
     /* 메시지 대기 리스트에 추가 */
     if(msg_q->wait_list != _BOSS_NULL) {
@@ -220,15 +198,11 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
     }
     msg_q->wait_list = &msg_wait;
     BOSS_IRQ_RESTORE_SR(irq_storage);
-    
-    if(WAIT_FOREVER == timeout) {
-        _Boss_wait_sig_forever(SIG_BOSS_SUCCESS);                 /* 무한 대기 */
-    } else {
-        (void)_Boss_wait_sig_timeout(SIG_BOSS_SUCCESS, timeout);  /* 타임아웃 대기  */
-    }
+
+    (void)_Boss_wait_sig_timeout(SIG_BOSS_SUCCESS, timeout);    /* 대기 (waiting)  */
 
     BOSS_IRQ_DISABLE_SR(irq_storage);
-    if( (Boss_self()->sigs & SIG_BOSS_SUCCESS) == 0 )               /* 타임아웃 */
+    if( (Boss_self()->sigs & SIG_BOSS_SUCCESS) == 0 )           /* 타임아웃 */
     {
       /* 메시지 대기 리스트에서 제거 (메시지 타임 아웃) */
       if(msg_wait.prev == _BOSS_NULL) {

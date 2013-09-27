@@ -25,7 +25,8 @@
 #define _BOSS_SUCCESS       ( 0)
 #define _BOSS_FAILURE       (-1)    /* (32bit=0xFFFFFFFF) / (16bit=0xFFFF) */
 
-#define WAIT_FOREVER        ((boss_tmr_ms_t)0)
+#define NO_WAIT             ( (boss_tmr_ms_t)0)
+#define WAIT_FOREVER        (~(boss_tmr_ms_t)0) // 32bit = 0xFFFFFFFF
 
 /*---------------------------------------------------------------------------*/
 /*                         RT-BOSS 시그널 비트 정의                          */
@@ -77,11 +78,10 @@ void        Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
 void        Boss_start(void);
 boss_tcb_t *Boss_self(void);
 
-void        Boss_sleep(boss_tmr_ms_t wait_ms);
+void        Boss_sleep(boss_tmr_ms_t timeout);
 
 void        Boss_sig_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
 void        Boss_sig_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-boss_sigs_t Boss_sig_receive(boss_sigs_t wait_sigs);
 boss_sigs_t Boss_sig_wait(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
 
 void Boss_task_create( int (*task)(void *p_arg), void *p_arg, 
