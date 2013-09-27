@@ -75,7 +75,7 @@ int cx_task(void *p_arg)
 
   for(;;)
   {
-    boss_u16_t flags = Boss_flag_wait_or(&test_flag_obj, 0x0001, 10*1000/*10ÃÊ*/);
+    boss_u16_t flags = Boss_flag_wait(&test_flag_obj, 0x0001, 10*1000/*10ÃÊ*/);
 
     if(flags == 0) {
       PRINTF("[%s] Timeout Flag Wait\n", Boss_self()->name);
