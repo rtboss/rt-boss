@@ -20,12 +20,11 @@ typedef unsigned long long  boss_u64_t;       /* unsigned 64bit 데이터형 */
 typedef boss_u32_t          boss_reg_t;       /* MCU 레지스터 크기      */
 typedef boss_u32_t          boss_uptr_t;      /* unsigned 포인터 크기   */
 typedef boss_u32_t          boss_stk_t;       /* 스택                   */
-
-typedef boss_u32_t          boss_sigs_t;      /* 시그널                 */
-typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
-
 typedef boss_u64_t          boss_align_t;     /* 메모리 정렬 (8byte)    */
 
+typedef boss_u16_t          boss_sigs_t;      /* 시그널                 */
+typedef boss_u32_t          boss_tmr_ms_t;    /* 타이머 카운트(ms)      */
+typedef boss_u16_t          boss_flags_t;     /* 플래그                 */
 
 /*===========================================================================*/
 /*                           RT-BOSS 사용자 설정                             */
@@ -122,8 +121,8 @@ typedef enum {
 #include "Boss.h"
 #include "Boss_Mem.h"
 #include "Boss_Tmr.h"
+#include "Boss_Flag.h"
 #include "Boss_Q_Msg.h"
-#include "Boss_Q_MBox.h"
 #include "Boss_Sem.h"
 #include "Boss_SPY.h"
 
@@ -150,38 +149,21 @@ void Boss_mem_info_report(void);
 /*===========================================================================*/
 /*                              SIGNALS DEFINE                               */
 /*---------------------------------------------------------------------------*/
-/* SIG_31_BIT ~ SIG_28_BIT (상위 4비트는 RT-BOSS에서 사용함)      */
-#define SIG_27_BIT    (boss_sigs_t)(1 << 27)    /* 0x 0800 0000 */
-#define SIG_26_BIT    (boss_sigs_t)(1 << 26)    /* 0x 0400 0000 */
-#define SIG_25_BIT    (boss_sigs_t)(1 << 25)    /* 0x 0200 0000 */
-#define SIG_24_BIT    (boss_sigs_t)(1 << 24)    /* 0x 0100 0000 */
+/* SIG_15_BIT ~ SIG_12_BIT (상위 4비트는 RT-BOSS에서 사용함) */
 
-#define SIG_23_BIT    (boss_sigs_t)(1 << 23)    /* 0x 0080 0000 */
-#define SIG_22_BIT    (boss_sigs_t)(1 << 22)    /* 0x 0040 0000 */
-#define SIG_21_BIT    (boss_sigs_t)(1 << 21)    /* 0x 0020 0000 */
-#define SIG_20_BIT    (boss_sigs_t)(1 << 20)    /* 0x 0010 0000 */
-#define SIG_19_BIT    (boss_sigs_t)(1 << 19)    /* 0x 0008 0000 */
-#define SIG_18_BIT    (boss_sigs_t)(1 << 18)    /* 0x 0004 0000 */
-#define SIG_17_BIT    (boss_sigs_t)(1 << 17)    /* 0x 0002 0000 */
-#define SIG_16_BIT    (boss_sigs_t)(1 << 16)    /* 0x 0001 0000 */
+#define SIG_11_BIT    (boss_sigs_t)(1 << 11)    /* 0x 0800 */
+#define SIG_10_BIT    (boss_sigs_t)(1 << 10)    /* 0x 0400 */
+#define SIG_09_BIT    (boss_sigs_t)(1 << 9)     /* 0x 0200 */
+#define SIG_08_BIT    (boss_sigs_t)(1 << 8)     /* 0x 0100 */
 
-#define SIG_15_BIT    (boss_sigs_t)(1 << 15)    /* 0x 0000 8000 */
-#define SIG_14_BIT    (boss_sigs_t)(1 << 14)    /* 0x 0000 4000 */
-#define SIG_13_BIT    (boss_sigs_t)(1 << 13)    /* 0x 0000 2000 */
-#define SIG_12_BIT    (boss_sigs_t)(1 << 12)    /* 0x 0000 1000 */
-#define SIG_11_BIT    (boss_sigs_t)(1 << 11)    /* 0x 0000 0800 */
-#define SIG_10_BIT    (boss_sigs_t)(1 << 10)    /* 0x 0000 0400 */
-#define SIG_09_BIT    (boss_sigs_t)(1 << 9)     /* 0x 0000 0200 */
-#define SIG_08_BIT    (boss_sigs_t)(1 << 8)     /* 0x 0000 0100 */
-
-#define SIG_07_BIT    (boss_sigs_t)(1 << 7)     /* 0x 0000 0080 */
-#define SIG_06_BIT    (boss_sigs_t)(1 << 6)     /* 0x 0000 0040 */
-#define SIG_05_BIT    (boss_sigs_t)(1 << 5)     /* 0x 0000 0020 */
-#define SIG_04_BIT    (boss_sigs_t)(1 << 4)     /* 0x 0000 0010 */
-#define SIG_03_BIT    (boss_sigs_t)(1 << 3)     /* 0x 0000 0008 */
-#define SIG_02_BIT    (boss_sigs_t)(1 << 2)     /* 0x 0000 0004 */
-#define SIG_01_BIT    (boss_sigs_t)(1 << 1)     /* 0x 0000 0002 */
-#define SIG_00_BIT    (boss_sigs_t)(1 << 0)     /* 0x 0000 0001 */
+#define SIG_07_BIT    (boss_sigs_t)(1 << 7)     /* 0x 0080 */
+#define SIG_06_BIT    (boss_sigs_t)(1 << 6)     /* 0x 0040 */
+#define SIG_05_BIT    (boss_sigs_t)(1 << 5)     /* 0x 0020 */
+#define SIG_04_BIT    (boss_sigs_t)(1 << 4)     /* 0x 0010 */
+#define SIG_03_BIT    (boss_sigs_t)(1 << 3)     /* 0x 0008 */
+#define SIG_02_BIT    (boss_sigs_t)(1 << 2)     /* 0x 0004 */
+#define SIG_01_BIT    (boss_sigs_t)(1 << 1)     /* 0x 0002 */
+#define SIG_00_BIT    (boss_sigs_t)(1 << 0)     /* 0x 0001 */
 
 /*===========================================================================*/
 /*                     USER DEFINE & FUNCTION PROTOTYPES                     */
