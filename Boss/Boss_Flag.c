@@ -68,7 +68,7 @@ void Boss_flag_send(boss_flag_obj_t *p_flag_obj, boss_flags_t set_flags)
       _Boss_setting_signal(p_link->p_tcb, SIG_BOSS_SUCCESS);
     }
     
-    p_link = p_link->prev;
+    p_link = p_link->next;
   }
   BOSS_IRQ_RESTORE();
 
