@@ -80,6 +80,8 @@ void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
       boss_tmr_t  *p_done = p_tmr;
       p_tmr = p_tmr->next;
 
+      p_done->tmr_ms = 0;       // 완료된 타이머 tmr_ms "0"으로 설정.
+
       /* Remove Active list */
       if(p_done->prev == _TRIMER_ACT_FIRST_PREV) {
         _boss_timer_act_list = p_done->next;
