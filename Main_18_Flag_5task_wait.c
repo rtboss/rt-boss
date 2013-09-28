@@ -40,7 +40,7 @@ int aa_main(void *p_arg)
 {
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_evt_obj Init\n");
+  PRINTF("test_flag_obj Init\n");
   Boss_flag_obj_init(&test_flag_obj);
 
   Boss_sleep(100); // TASK init wait
@@ -52,10 +52,10 @@ int aa_main(void *p_arg)
     Boss_sleep(2000);    
     param_count++;
     
-    PRINTF("\n[%s] Boss_evt_flag_set( param = %d )\n", Boss_self()->name, param_count);
+    PRINTF("\n[%s] (%d) Boss_flag_send()\n", Boss_self()->name, param_count);
     Boss_flag_send(&test_flag_obj, 0x0001);
   }
-    
+  
   return 0;   // Task Exit
 }
 
@@ -75,12 +75,14 @@ int cx_task(void *p_arg)
 
   for(;;)
   {
-    boss_u16_t flags = Boss_flag_wait(&test_flag_obj, 0x0001, 10*1000/*10초*/);
-
+    boss_u16_t flags;
+    flags = Boss_flag_wait(&test_flag_obj, _FLAG_OPT_OR + _FLAG_OPT_CONSUME,
+                                                      0x0001, 20*1000/*20초*/);
     if(flags == 0) {
       PRINTF("[%s] Timeout Flag Wait\n", Boss_self()->name);
     } else {
-      PRINTF("[%s] Boss_flag_wait_or() flag = 0x%04x\n", Boss_self()->name, flags);
+      PRINTF("[%s] Boss_flag_wait(OR + CONSUME) flags = 0x%04x\n",
+                                                      Boss_self()->name, flags);
     }
   }
   
@@ -157,48 +159,48 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            test_evt_obj Init
+            test_flag_obj Init
             [C01 TASK] Init 
             [C02 TASK] Init 
             [C03 TASK] Init 
             [C04 TASK] Init 
             [C05 TASK] Init 
             
-            [AA] Boss_evt_flag_set( param = 1 )
-            [C01] Boss_flag_wait_or() flag = 0x0001
+            [AA] (1) Boss_flag_send()
+            [C01] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 2 )
-            [C02] Boss_flag_wait_or() flag = 0x0001
+            [AA] (2) Boss_flag_send()
+            [C02] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 3 )
-            [C03] Boss_flag_wait_or() flag = 0x0001
+            [AA] (3) Boss_flag_send()
+            [C03] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 4 )
-            [C04] Boss_flag_wait_or() flag = 0x0001
+            [AA] (4) Boss_flag_send()
+            [C04] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 5 )
-            [C05] Boss_flag_wait_or() flag = 0x0001
+            [AA] (5) Boss_flag_send()
+            [C05] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 6 )
-            [C01] Boss_flag_wait_or() flag = 0x0001
+            [AA] (6) Boss_flag_send()
+            [C01] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 7 )
-            [C02] Boss_flag_wait_or() flag = 0x0001
+            [AA] (7) Boss_flag_send()
+            [C02] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 8 )
-            [C03] Boss_flag_wait_or() flag = 0x0001
+            [AA] (8) Boss_flag_send()
+            [C03] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 9 )
-            [C04] Boss_flag_wait_or() flag = 0x0001
+            [AA] (9) Boss_flag_send()
+            [C04] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 10 )
-            [C05] Boss_flag_wait_or() flag = 0x0001
+            [AA] (10) Boss_flag_send()
+            [C05] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 11 )
-            [C01] Boss_flag_wait_or() flag = 0x0001
+            [AA] (11) Boss_flag_send()
+            [C01] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] Boss_evt_flag_set( param = 12 )
-            [C02] Boss_flag_wait_or() flag = 0x0001
+            [AA] (12) Boss_flag_send()
+            [C02] Boss_flag_wait(OR + CONSUME) flags = 0x0001
 
             ------- 중략 -------
 
