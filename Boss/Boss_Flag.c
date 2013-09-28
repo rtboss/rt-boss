@@ -14,8 +14,7 @@
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
 /*---------------------------------------------------------------------------*/
-#define __FLAG_OPT_AND      0x00
-#define __FLAG_OPT__OR      0x01
+
 
 
 /*===========================================================================*/
@@ -56,31 +55,20 @@ void Boss_flag_clear(boss_flag_obj_t *p_flag_obj, boss_flags_t clr_flags)
 ---------------------------------------------------------------------------*/
 void Boss_flag_send(boss_flag_obj_t *p_flag_obj, boss_flags_t set_flags)
 {
+  _flag_link_t *p_link;
+  
   BOSS_IRQ_DISABLE();
   p_flag_obj->flags = p_flag_obj->flags | set_flags;
 
-  if(p_flag_obj->wait_list != _BOSS_NULL)
+  p_link = p_flag_obj->wait_list;
+  while(p_link != _BOSS_NULL)
   {
-    _flag_link_t *p_link = p_flag_obj->wait_list;
-
-    while(p_link->next != _BOSS_NULL) {       /* find first wait */
-        p_link = p_link->next;
+    if( (p_link->wait_flags & set_flags) != 0 )
+    {
+      _Boss_setting_signal(p_link->p_tcb, SIG_BOSS_SUCCESS);
     }
     
-    do {
-      boss_flags_t flags;
-
-      flags = p_flag_obj->flags & p_link->wait_flags;
-      if((p_link->wait_opt == __FLAG_OPT_AND) && (flags != p_link->wait_flags)) {
-          flags = 0;
-      }
-
-      if(flags != 0) {
-          _Boss_setting_signal(p_link->p_tcb, SIG_BOSS_SUCCESS);
-      }
-
-      p_link = p_link->prev;
-    } while(p_link != _BOSS_NULL);
+    p_link = p_link->prev;
   }
   BOSS_IRQ_RESTORE();
 
@@ -89,10 +77,10 @@ void Boss_flag_send(boss_flag_obj_t *p_flag_obj, boss_flags_t set_flags)
 
 
 /*===========================================================================
-    _   B O S S _ F L A G _ O P T _ W A I T
+    B O S S _ F L A G _ W A I T
 ---------------------------------------------------------------------------*/
-static boss_flags_t _Boss_flag_opt_wait(boss_flag_obj_t *p_flag_obj,
-                boss_flags_t wait_flags, boss_tmr_ms_t timeout, boss_u16_t opt)
+boss_flags_t Boss_flag_wait(boss_flag_obj_t *p_flag_obj, boss_reg_t opt,
+                                boss_flags_t wait_flags, boss_tmr_ms_t timeout)
 {
   _flag_link_t  flag_link;
   boss_flags_t  flags;
@@ -100,25 +88,34 @@ static boss_flags_t _Boss_flag_opt_wait(boss_flag_obj_t *p_flag_obj,
   
   flag_link.prev        = _BOSS_NULL;
   flag_link.next        = _BOSS_NULL;
-  flag_link.wait_opt    = opt;
   flag_link.wait_flags  = wait_flags;
   flag_link.p_tcb       = Boss_self();
 
   BOSS_IRQ_DISABLE_SR(irq_storage);
   flags = p_flag_obj->flags & wait_flags;
 
-  if( (__FLAG_OPT_AND == opt) && (flags != wait_flags) ) {
+  if( (opt & _FLAG_OPT_AND) && (flags != wait_flags) ) {
       flags = 0;
   }
   
   if( (flags == 0) && (timeout != NO_WAIT) )
   {
     /* 이벤트 플래그 리스트에 추가 */
-    if(p_flag_obj->wait_list != _BOSS_NULL) {
-        p_flag_obj->wait_list->prev = &flag_link;
-        flag_link.next = p_flag_obj->wait_list;
+    _flag_link_t *p_tail = p_flag_obj->wait_list;
+    
+    if(p_tail == _BOSS_NULL)
+    {
+      p_flag_obj->wait_list = &flag_link;
     }
-    p_flag_obj->wait_list = &flag_link;
+    else
+    {
+      while(p_tail->next != _BOSS_NULL) {
+          p_tail = p_tail->next;
+      }
+      
+      flag_link.prev  = p_tail;
+      p_tail->next    = &flag_link;
+    }
 
     do {
       Boss_sig_clear( Boss_self(), SIG_BOSS_SUCCESS);
@@ -128,7 +125,7 @@ static boss_flags_t _Boss_flag_opt_wait(boss_flag_obj_t *p_flag_obj,
 
       BOSS_IRQ_DISABLE_SR(irq_storage);
       flags = p_flag_obj->flags & wait_flags;
-      if( (__FLAG_OPT_AND == opt) && (flags != wait_flags) ) {
+      if( (opt & _FLAG_OPT_AND) && (flags != wait_flags) ) {
           flags = 0;
       }
     } while((flags == 0) && (timeout != 0));
@@ -144,28 +141,11 @@ static boss_flags_t _Boss_flag_opt_wait(boss_flag_obj_t *p_flag_obj,
         flag_link.next->prev = flag_link.prev;
     }
   }
-  p_flag_obj->flags = p_flag_obj->flags & ~flags;     // receive flags clear
+  
+  if(opt & _FLAG_OPT_CONSUME) {
+      p_flag_obj->flags = p_flag_obj->flags & ~flags;     // receive flags clear
+  }
   BOSS_IRQ_RESTORE_SR(irq_storage);
 
   return flags;
-}
-
-
-/*===========================================================================
-    B O S S _ F L A G _ W A I T
----------------------------------------------------------------------------*/
-boss_flags_t Boss_flag_wait(boss_flag_obj_t *p_flag_obj,
-                                boss_flags_t wait_flags, boss_tmr_ms_t timeout)
-{
-  return _Boss_flag_opt_wait(p_flag_obj, wait_flags, timeout, __FLAG_OPT__OR);
-}
-
-
-/*===========================================================================
-    B O S S _ F L A G _ W A I T _ A N D
----------------------------------------------------------------------------*/
-boss_flags_t Boss_flag_wait_and(boss_flag_obj_t *p_flag_obj,
-                                boss_flags_t wait_flags, boss_tmr_ms_t timeout)
-{
-  return _Boss_flag_opt_wait(p_flag_obj, wait_flags, timeout, __FLAG_OPT_AND);
 }
