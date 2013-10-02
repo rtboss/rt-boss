@@ -67,10 +67,10 @@ DEPDIR  = $(BUILDDIR)/.dep
 SRC =	Boss_Conf.c			\
 		Boss_CPU_ATmega_GCC.c \
 		Boss.c				\
+		Boss_Flag.c			\
 		Boss_Tmr.c			\
 		Boss_Mem.c			\
 		Boss_Q_Msg.c		\
-		Boss_Q_MBox.c		\
 		Boss_Sem.c			\
 		Boss_SPY.c			\
 		Main.c

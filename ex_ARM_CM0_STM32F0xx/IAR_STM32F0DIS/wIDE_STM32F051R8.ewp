@@ -950,10 +950,10 @@
       <name>$PROJ_DIR$\..\..\Boss_Port\Boss_CPU_ARM_CM0_IAR_asm.s</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\Boss\Boss_Mem.c</name>
+      <name>$PROJ_DIR$\..\..\Boss\Boss_Flag.c</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\Boss\Boss_Q_MBox.c</name>
+      <name>$PROJ_DIR$\..\..\Boss\Boss_Mem.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\..\Boss\Boss_Q_Msg.c</name>

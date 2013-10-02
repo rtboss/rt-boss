@@ -76,10 +76,9 @@ void Boss_spy_stack_check(boss_tcb_t *p_tcb)
     }
   }
   
-  BOSS_ASSERT(p_tcb->ex.sp_limit[-2] == (boss_stk_t)0xEEEEEEEE);  // Stack crack  
+  BOSS_ASSERT(p_tcb->ex.sp_limit[-2] == (boss_stk_t)0xEEEEEEEE);  // Stack crack
   BOSS_ASSERT(p_tcb->ex.sp_limit[-1] == (boss_stk_t)0xEEEEEEEE);
 }
-
 
 
 /*===========================================================================
@@ -93,19 +92,17 @@ void Boss_spy_report(void)
   boss_u32_t context_sum = 0;
   boss_tcb_t *p_tcb;
 
-  _Boss_spy_msp_check();
-  Boss_spy_msp_report();
-
   _Boss_sched_lock();
-  PRINTF("\n[TASK]\t  STACK %%(u/t)\t  C P U    Context\n");
-  PRINTF("------------------------------------------\n");
+  PRINTF("\n==================================================\n");
+  PRINTF(  "PRI  NAME  STACK %%(u/t)   C P U   Status  Context\n");
+  PRINTF(  "--------------------------------------------------\n");
   
   total_us = Boss_spy_elapse_prev_us();
 
   p_tcb = Boss_ex_task_list(0);
   while( p_tcb != _BOSS_NULL )
   {
-    PRINTF("%5s", p_tcb->name);
+    PRINTF("%3d %5s", p_tcb->prio, p_tcb->name);
 
     { /* [ Stack ] */
       boss_uptr_t stk_total;
@@ -116,7 +113,7 @@ void Boss_spy_report(void)
       stk_used  = (boss_uptr_t)p_tcb->ex.sp_limit - (boss_uptr_t)p_tcb->ex.sp_peak;
       stk_pct = (boss_reg_t)(((boss_u32_t)stk_used * 100) / (boss_u32_t)stk_total);
       
-      PRINTF("\t  %2d%%(%3d/%3d)", stk_pct, stk_used, stk_total);
+      PRINTF("  %2d%%(%3d/%3d)", stk_pct, stk_used, stk_total);
     }
 
     { /* [ C P U ] */
@@ -125,23 +122,33 @@ void Boss_spy_report(void)
       cpu_pct = (boss_u32_t)(((boss_u64_t)(p_tcb->ex.run_time) * (boss_u64_t)100000)
                                                     / (boss_u64_t)total_us);
       
-      PRINTF("\t %2d.%03d%%", (int)(cpu_pct/1000), (int)(cpu_pct%1000));
+      PRINTF("  %2d.%03d%%", (int)(cpu_pct/1000), (int)(cpu_pct%1000));
       cpu_pct_sum = cpu_pct_sum  + cpu_pct;
     }
-    
-    PRINTF("   %7d\n", p_tcb->ex.context);
+
+    { /* [ Task Priority / Status ]*/
+      int status = Boss_spy_task_status(p_tcb);
+      PRINTF("   %s", (status == 2) ? "RUN "
+                    : (status == 1) ? "Pend"
+                    :                 "Wait" );
+    }
+
+    PRINTF("  %7d\n", p_tcb->ex.context);
     context_sum = context_sum + p_tcb->ex.context;
 
     p_tcb = p_tcb->ex_task_link;    // Next Task link
   }
 
-  PRINTF("[TOTAL] :\t\t %2d.%03d%%   %7d\n\n",
+  PRINTF("\n---[TOTAL]-------------  %2d.%03d%%  ------ %7d\n\n",
           (int)(cpu_pct_sum/1000), (int)(cpu_pct_sum%1000), context_sum);
+  
+  _Boss_sched_free();
 
   PRINTF("   total_us = %d\n", total_us);
   PRINTF("   SysTick->LOAD = %d\n", SysTick->LOAD);
-  
-  _Boss_sched_free();
+
+  _Boss_spy_msp_check();
+  Boss_spy_msp_report();
 }
 
 
@@ -415,14 +422,6 @@ void SysTick_Handler(void)    /* Boss Tick Timer */
 {
   _BOSS_ISR_BEGIN();
   {
-    #ifdef _BOSS_RR_QUANTUM_MS
-    _Boss_sched_rr_quantum_tick(_BOSS_TICK_MS_);
-    #endif
-
-    #ifdef _BOSS_SPY_
-    _Boss_spy_elapse_tick(_BOSS_TICK_MS_);
-    #endif
-    
     _Boss_timer_tick(_BOSS_TICK_MS_);
   }
   _BOSS_ISR_FINIS();
