@@ -23,8 +23,7 @@
 /*static*/ boss_tmr_t *_boss_timer_act_list = _BOSS_NULL; /* Active Timer list */
 /*static*/ boss_tmr_t *_boss_timer_exe_list = _BOSS_NULL; /* Execute Timer list*/
 
-boss_tcb_t *_p_tmr_cb_tcb = _BOSS_NULL;
-boss_sigs_t _tmr_cb_sig   = 0;
+/*static*/ void (*_tmr_exe_notify)(void) = _BOSS_NULL;  /* Timer Execute Notify */
 
 
 /*===========================================================================*/
@@ -39,13 +38,12 @@ void _Boss_spy_elapse_tick(boss_u32_t tick_ms);
 #endif
 
 /*===========================================================================
-    _   B O S S _ T I M E R _ C B _ T A S K _ S E T
+    _   B O S S _ T I M E R _ N O T I F Y _ S E T
 ---------------------------------------------------------------------------*/
-void _Boss_timer_cb_task_set(boss_tcb_t *p_cb_tcb, boss_sigs_t cb_sig)
+void _Boss_timer_notify_set( void (*notify)(void) )
 {
   BOSS_IRQ_DISABLE();
-  _p_tmr_cb_tcb = p_cb_tcb;
-  _tmr_cb_sig   = cb_sig;
+  _tmr_exe_notify = notify;
   BOSS_IRQ_RESTORE();
 }
 
@@ -108,8 +106,8 @@ void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
 
   if(_boss_timer_exe_list != _BOSS_NULL)
   {
-    if(_p_tmr_cb_tcb != _BOSS_NULL) {
-      Boss_sig_send(_p_tmr_cb_tcb, _tmr_cb_sig);
+    if(_tmr_exe_notify != _BOSS_NULL) {
+      _tmr_exe_notify();
     } else {
       _Boss_timer_callback_execute();
     }
@@ -122,25 +120,29 @@ void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
 ---------------------------------------------------------------------------*/
 void _Boss_timer_callback_execute(void)
 {
+  boss_reg_t  irq_storage;
+  
   _Boss_sched_lock();
+  BOSS_IRQ_DISABLE_SR(irq_storage);
   while(_boss_timer_exe_list != _BOSS_NULL)
   {
-    boss_tmr_t  *p_done;
-    tmr_cb_t    callback;
+    boss_tmr_t *p_done = _boss_timer_exe_list;
+    _boss_timer_exe_list = p_done->next;
     
-    BOSS_IRQ_DISABLE();
-    p_done = _boss_timer_exe_list;
-    _boss_timer_exe_list = _boss_timer_exe_list->next;
-    if(_boss_timer_exe_list != _BOSS_NULL) {
-      _boss_timer_exe_list->prev = _TRIMER_EXE_FIRST_PREV;
+    BOSS_ASSERT(p_done->prev == _TRIMER_EXE_FIRST_PREV);
+    
+    if(p_done->next != _BOSS_NULL) {
+      p_done->next->prev = _TRIMER_EXE_FIRST_PREV;
     }
     p_done->prev = _BOSS_NULL;
     p_done->next = _BOSS_NULL;
-    callback = p_done->tmr_cb;
-    BOSS_IRQ_RESTORE();
-
-    callback(p_done);   // Callback Execute
+    BOSS_IRQ_RESTORE_SR(irq_storage);
+    
+    p_done->tmr_cb(p_done);   // Callback Execute
+    
+    BOSS_IRQ_DISABLE_SR(irq_storage);
   }
+  BOSS_IRQ_RESTORE_SR(irq_storage);
   _Boss_sched_free();
 }
 
@@ -192,7 +194,8 @@ void Boss_tmr_stop(boss_tmr_t *p_tmr)
     if(p_tmr->next != _BOSS_NULL) {
       p_tmr->next->prev = p_tmr->prev;
     }
+    
+    p_tmr->prev = _BOSS_NULL;
   }
-  p_tmr->prev = _BOSS_NULL;
   BOSS_IRQ_RESTORE();
 }
