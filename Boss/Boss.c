@@ -58,9 +58,6 @@ static void _Boss_tcb_init( boss_tcb_t *p_tcb, boss_prio_t prio,
   p_tcb->run_next = _BOSS_NULL;
   p_tcb->prio   = prio;
   
-  p_tcb->sigs   = 0;
-  p_tcb->wait   = 0;
-  
   p_tcb->sp     = _Boss_stk_init(task, p_arg, sp_base, stk_bytes);  
     
   #ifdef _BOSS_TCB_NAME_SIZE
@@ -256,71 +253,15 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
 #endif /* _BOSS_RR_QUANTUM_MS */
 
 
-/*
-*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
-*                               [ Signal ]                                    *
-*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
-*/
-
 /*===========================================================================
-    _   B O S S _ S E T T I N G _ S I G N A L
+    _   B O S S _ S C H E D _ S E T T I N G _ I N D I C A T E
 ---------------------------------------------------------------------------*/
-void _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs)
+void _Boss_sched_setting_indicate(boss_tcb_t *p_tcb, boss_u08_t indicate)
 {
   BOSS_IRQ_DISABLE();
-  p_tcb->sigs = p_tcb->sigs | sigs;
-
-  if( p_tcb->wait & sigs ) {
-      _Boss_sched_list_insert(p_tcb);
-  }
+  p_tcb->indicate = p_tcb->indicate | indicate;
+  _Boss_sched_list_insert(p_tcb);
   BOSS_IRQ_RESTORE();
-}
-
-
-/*===========================================================================
-    B O S S _ S I G _ S E N D
----------------------------------------------------------------------------*/
-void Boss_sig_send(boss_tcb_t *p_tcb, boss_sigs_t sigs)
-{
-  _Boss_setting_signal(p_tcb, sigs);
-  
-  _Boss_schedule();       /* 문맥전환 실행  */
-}
-
-
-/*===========================================================================
-    B O S S _ S I G _ C L E A R
----------------------------------------------------------------------------*/
-void Boss_sig_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs)
-{
-  BOSS_IRQ_DISABLE();
-  p_tcb->sigs = p_tcb->sigs & ~sigs;
-  BOSS_IRQ_RESTORE();
-}
-
-
-/*===========================================================================
-    _   B O S S _ W A I T _ S I G _ F O R E V E R
----------------------------------------------------------------------------*/
-void _Boss_wait_sig_forever(boss_sigs_t wait_sigs)
-{
-  boss_tcb_t  *cur_tcb;
-
-  BOSS_ASSERT(_BOSS_IRQ_() == 0);
-  BOSS_ASSERT(_BOSS_ISR_() == 0);
-  BOSS_ASSERT(Boss_sched_locking() == 0);
-  BOSS_ASSERT(wait_sigs != 0);
-  
-  cur_tcb = Boss_self();
-  cur_tcb->wait = wait_sigs;
-
-  BOSS_IRQ_DISABLE();
-  if( (cur_tcb->sigs & wait_sigs) == 0 ) {    /* 실행할 시그널이 없을면 */
-      _Boss_sched_list_remove(cur_tcb);       /* 스케줄러 리스트에서 제거 */
-  }
-  BOSS_IRQ_RESTORE();
-
-  _Boss_schedule();       /* 문맥전환 실행  */
 }
 
 
@@ -333,37 +274,53 @@ static void _timeout_callback(boss_tmr_t *p_tmr)
 {
   _timeout_tmr_t *p_timeout = (_timeout_tmr_t *)p_tmr;
 
-  _Boss_setting_signal(p_timeout->p_tcb, SIG_BOSS_TIMEOUT);
+  _Boss_sched_setting_indicate(p_timeout->p_tcb, BOSS_INDICATE_TIMEOUT);
 }
 
 
 /*===========================================================================
-    _   B O S S _ W A I T _ S I G _ T I M E O U T
+    _   B O S S _ S C H E D _ T I M E O U T _ W A I T
 ---------------------------------------------------------------------------*/
-boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout)
-{
-  BOSS_ASSERT(timeout != NO_WAIT);        // timeout : 0x00000000
+boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout)
+{  
+  boss_tcb_t      *cur_tcb;
   
-  if( timeout == WAIT_FOREVER )           // timeout : 0xffffffff
+  BOSS_ASSERT(_BOSS_IRQ_() == 0);
+  BOSS_ASSERT(_BOSS_ISR_() == 0);
+  BOSS_ASSERT(Boss_sched_locking() == 0);
+  
+  BOSS_ASSERT(timeout != NO_WAIT);                  // timeout : 0x00000000
+
+  cur_tcb = Boss_self();
+
+  if( timeout == WAIT_FOREVER )                     // timeout : 0xffffffff
   {
-    _Boss_wait_sig_forever(wait_sigs);    
+    BOSS_IRQ_DISABLE();
+    if(cur_tcb->indicate == BOSS_INDICATE_NULL) {
+      _Boss_sched_list_remove(cur_tcb);             /* 스케줄러 리스트에서 제거 */
+    }
+    BOSS_IRQ_RESTORE();
+    
+    _Boss_schedule();                               /* 문맥전환 실행 */
   }
-  else
-  {                                       // timeout : 1 ~ 0xfffffffe
+  else                                              // timeout : 1 ~ 0xfffffffe
+  {
     _timeout_tmr_t  timeout_tmr;
-    
-    Boss_sig_clear(Boss_self(), SIG_BOSS_TIMEOUT);
-    
+
     timeout_tmr.tmr.prev  = _BOSS_NULL;
-    timeout_tmr.p_tcb     = Boss_self();
-    
+    timeout_tmr.p_tcb     = cur_tcb;
     Boss_tmr_start((boss_tmr_t *)&timeout_tmr, timeout, _timeout_callback);
 
-    _Boss_wait_sig_forever(wait_sigs | SIG_BOSS_TIMEOUT);
+    BOSS_IRQ_DISABLE();
+    if(cur_tcb->indicate == BOSS_INDICATE_NULL) {
+      _Boss_sched_list_remove(cur_tcb);             /* 스케줄러 리스트에서 제거 */
+    }
+    BOSS_IRQ_RESTORE();
     
-    Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
+    _Boss_schedule();                               /* 문맥전환 실행 */
 
-    timeout = timeout_tmr.tmr.tmr_ms;            /* 남은 시간 반환 */
+    Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
+    timeout = timeout_tmr.tmr.tmr_ms;               /* 남은 시간 반환 */
   }
   
   return timeout;
@@ -378,31 +335,9 @@ void Boss_sleep(boss_tmr_ms_t timeout)
   BOSS_ASSERT(timeout != NO_WAIT);                        // timeout : 0x00000000
   BOSS_ASSERT(timeout != WAIT_FOREVER);                   // timeout : 0xffffffff
   
-  (void)_Boss_wait_sig_timeout((boss_sigs_t)0, timeout);  // timeout : 1 ~ 0xfffffffe
-}
+  Boss_self()->indicate = BOSS_INDICATE_NULL;
 
-
-/*===========================================================================
-    B O S S _ S I G _ W A I T
----------------------------------------------------------------------------*/
-boss_sigs_t Boss_sig_wait(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout)
-{
-  boss_sigs_t recv_sigs;
-  boss_tcb_t  *cur_tcb;
-  
-  if(timeout != NO_WAIT)
-  {
-    (void)_Boss_wait_sig_timeout(wait_sigs, timeout);
-  }
-  
-  cur_tcb = Boss_self();
-  
-  BOSS_IRQ_DISABLE();
-  recv_sigs     = cur_tcb->sigs & wait_sigs;
-  cur_tcb->sigs = cur_tcb->sigs & ~recv_sigs;   /* 수신한 시그널 클리어 */
-  BOSS_IRQ_RESTORE();
-  
-  return recv_sigs;
+  (void)_Boss_sched_timeout_wait(timeout);    // timeout : 1 ~ 0xfffffffe
 }
 
 
@@ -486,7 +421,6 @@ void _Boss_task_exit(int exit_code)
   _Boss_sched_free();
   #endif
   
-  cur_tcb->wait   = 0;
   BOSS_IRQ_DISABLE();
   _Boss_sched_list_remove(cur_tcb);
   BOSS_IRQ_RESTORE();

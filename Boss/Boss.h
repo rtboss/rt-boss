@@ -25,21 +25,13 @@
 #define _BOSS_SUCCESS       ( 0)
 #define _BOSS_FAILURE       (-1)    /* (32bit=0xFFFFFFFF) / (16bit=0xFFFF) */
 
-#define NO_WAIT             ( (boss_tmr_ms_t)0)
+#define NO_WAIT             ( (boss_tmr_ms_t)0) // 32bit = 0x00000000
 #define WAIT_FOREVER        (~(boss_tmr_ms_t)0) // 32bit = 0xFFFFFFFF
 
-/*---------------------------------------------------------------------------*/
-/*                         RT-BOSS 시그널 비트 정의                          */
-/*                                                                           */
-/*    시그널 데이터형이 32Bit일 경우 "SIG_BOSS_MSB_BIT" 는 "0x8000 0000"     */
-/*    시그널 데이터형이 16bit일 경우 "SIG_BOSS_MSB_BIT" 는 "0x8000"          */
-/*---------------------------------------------------------------------------*/
-#define SIG_BOSS_MSB_BIT  (boss_sigs_t)((boss_sigs_t)1 << ((sizeof(boss_sigs_t)*8)-1))
 
-#define SIG_BOSS_TIMEOUT      (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 0)  /* 타임아웃(슬립) */
-#define SIG_BOSS_SUCCESS      (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 1)  /* 완료 (성공)    */
-//#define SIG_BOSS_RESERVE_MSB2   (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 2)  /* 예비(2)    */
-//#define SIG_BOSS_RESERVE_MSB3   (boss_sigs_t)(SIG_BOSS_MSB_BIT >> 3)  /* 예비(3)    */
+#define BOSS_INDICATE_TIMEOUT       ((boss_u08_t)(0x80))    /* 타임아웃(슬립) */
+#define BOSS_INDICATE_SUCCESS       ((boss_u08_t)(0x01))    /* 성공 / 완료    */
+#define BOSS_INDICATE_NULL          ((boss_u08_t)(0x00))
 
 /*---------------------------------------------------------------------------*/
 /*                        TCB (Task Control Block)                           */
@@ -49,13 +41,13 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
                                           /* NULL : Waiting / !NULL : Scheduled */
   
   boss_prio_t       prio;                 /* Task Priority  */
+                                          
+  boss_u08_t        indicate;             /* Indicate       */
 
   #ifdef _BOSS_RR_QUANTUM_MS
   boss_u16_t        quantum_ms;           /* Round Robin    */
   #endif
   
-  boss_sigs_t       sigs;                 /* Current Signal */
-  boss_sigs_t       wait;                 /* Waiting Signal */
   
   boss_stk_t        *sp;                  /* Task Stack Point */
   
@@ -79,10 +71,6 @@ void        Boss_start(void);
 boss_tcb_t *Boss_self(void);
 
 void        Boss_sleep(boss_tmr_ms_t timeout);
-
-void        Boss_sig_send(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-void        Boss_sig_clear(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-boss_sigs_t Boss_sig_wait(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
 
 void Boss_task_create( int (*task)(void *p_arg), void *p_arg, 
                         boss_tcb_t *p_tcb, boss_prio_t prio, 

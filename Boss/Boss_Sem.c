@@ -22,9 +22,9 @@
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void          _Boss_schedule(void);
-void          _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
+void _Boss_schedule(void);
+void _Boss_sched_setting_indicate(boss_tcb_t *p_tcb, boss_u08_t indicate);
+boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout);
 
 
 /*===========================================================================
@@ -49,9 +49,9 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
   boss_reg_t  obtain = (boss_reg_t)_BOSS_FAILURE;
   _sem_link_t sem_wait;
   boss_reg_t  irq_storage;
-  
-  Boss_sig_clear( Boss_self(), SIG_BOSS_SUCCESS );
 
+  Boss_self()->indicate = BOSS_INDICATE_NULL;
+  
   sem_wait.prev   = _BOSS_NULL;
   sem_wait.next   = _BOSS_NULL;
   sem_wait.p_tcb  = Boss_self();
@@ -72,10 +72,10 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
     p_sem->wait_list = &sem_wait;
     BOSS_IRQ_RESTORE_SR(irq_storage);
     
-    (void)_Boss_wait_sig_timeout(SIG_BOSS_SUCCESS, timeout);  /* ´ë±â (waiting)*/
+    (void)_Boss_sched_timeout_wait(timeout);                  /* ´ë±â (waiting)*/
     
     BOSS_IRQ_DISABLE_SR(irq_storage);
-    if( Boss_self()->sigs & SIG_BOSS_SUCCESS )
+    if( Boss_self()->indicate != _BOSS_FALSE )
     {
       obtain = _BOSS_SUCCESS;                                 /* ¼¼¸¶Æ÷¾î È¹µæ */
     }
@@ -130,7 +130,7 @@ void Boss_sem_release(boss_sem_t *p_sem)
        p_best->next->prev = p_best->prev;
     }
     
-    _Boss_setting_signal(p_best->p_tcb, SIG_BOSS_SUCCESS);
+    _Boss_sched_setting_indicate(p_best->p_tcb, BOSS_INDICATE_SUCCESS);
   }
   else
   {

@@ -24,9 +24,9 @@
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void          _Boss_schedule(void);
-void          _Boss_setting_signal(boss_tcb_t *p_tcb, boss_sigs_t sigs);
-boss_tmr_ms_t _Boss_wait_sig_timeout(boss_sigs_t wait_sigs, boss_tmr_ms_t timeout);
+void _Boss_schedule(void);
+void _Boss_sched_setting_indicate(boss_tcb_t *p_tcb, boss_u08_t indicate);
+boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout);
 
 
 /*===========================================================================
@@ -65,7 +65,7 @@ void Boss_flag_send(boss_flag_obj_t *p_flag_obj, boss_flags_t set_flags)
   {
     if( (p_link->wait_flags & set_flags) != 0 )
     {
-      _Boss_setting_signal(p_link->p_tcb, SIG_BOSS_SUCCESS);
+      _Boss_sched_setting_indicate(p_link->p_tcb, BOSS_INDICATE_SUCCESS);
     }
     
     p_link = p_link->next;
@@ -118,10 +118,10 @@ boss_flags_t Boss_flag_wait(boss_flag_obj_t *p_flag_obj, boss_reg_t opt,
     }
 
     do {
-      Boss_sig_clear( Boss_self(), SIG_BOSS_SUCCESS);
+      Boss_self()->indicate = BOSS_INDICATE_NULL;
       BOSS_IRQ_RESTORE_SR(irq_storage);
 
-      timeout = _Boss_wait_sig_timeout(SIG_BOSS_SUCCESS, timeout);  /* 대기 (waiting)*/
+      timeout = _Boss_sched_timeout_wait(timeout);          /* 대기 (waiting)*/
 
       BOSS_IRQ_DISABLE_SR(irq_storage);
       flags = p_flag_obj->flags & wait_flags;
