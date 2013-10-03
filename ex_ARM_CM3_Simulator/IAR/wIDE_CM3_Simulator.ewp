@@ -956,9 +956,6 @@
       <name>$PROJ_DIR$\..\..\Boss\Boss_Mem.c</name>
     </file>
     <file>
-      <name>$PROJ_DIR$\..\..\Boss\Boss_Q_MBox.c</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\..\Boss\Boss_Q_Msg.c</name>
     </file>
     <file>
