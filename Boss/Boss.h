@@ -61,21 +61,22 @@ typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */
   #endif
 } boss_tcb_t;
 
+typedef boss_tcb_t *    BOSS_TID_T;       /* TASK ID TYPE (TCB Point) */
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-void        Boss_init(int (*idle_task)(void *), boss_tcb_t *idle_tcb,
-                                  boss_stk_t *sp_base, boss_uptr_t stk_bytes);
+BOSS_TID_T  Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
+                                    boss_stk_t *sp_base, boss_uptr_t stk_bytes);
+
 void        Boss_start(void);
-boss_tcb_t *Boss_self(void);
+BOSS_TID_T  Boss_self(void);
 
 void        Boss_sleep(boss_tmr_ms_t timeout);
 
-void Boss_task_create( int (*task)(void *p_arg), void *p_arg, 
-                        boss_tcb_t *p_tcb, boss_prio_t prio, 
-                        boss_stk_t *sp_base, boss_uptr_t stk_bytes,
-                        const char *name );
+BOSS_TID_T  Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
+                                  boss_stk_t *sp_base, boss_uptr_t stk_bytes,
+                                            boss_prio_t prio, const char *name);
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio);
 void _Boss_task_exit(int exit_code);
 
