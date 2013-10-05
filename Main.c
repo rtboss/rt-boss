@@ -25,15 +25,11 @@
 void Boss_device_init(void);
 
 /*===========================================================================
-    [ A A _ T A S K ]
+    A A _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    aa_tcb;
-boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t aa_stk[(512 + sizeof(boss_tcb_t)) / sizeof(boss_stk_t)]; /* 512 bytes */
 
-/*===============================================
-    A A _ M A I N
------------------------------------------------*/
-int aa_main(void *p_arg)
+int aa_task(void *p_arg)
 {  
   int aa_count = 0;
   
@@ -57,15 +53,11 @@ int aa_main(void *p_arg)
 
 
 /*===========================================================================
-    [ B B _ T A S K ]
+    B B _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    bb_tcb;
-boss_align_t  bb_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t bb_stk[(512 + sizeof(boss_tcb_t)) / sizeof(boss_stk_t)]; /* 512 bytes */
 
-/*===============================================
-    B B _ M A I N
------------------------------------------------*/
-int bb_main(void *p_arg)
+int bb_task(void *p_arg)
 {
   int bb_count = 0;
   
@@ -102,13 +94,9 @@ int bb_main(void *p_arg)
 *                         RT-BOSS ( IDLE TASK )                               *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
-boss_tcb_t    idle_tcb;
-boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
+boss_stk_t idle_stack[(128 + sizeof(boss_tcb_t)) / sizeof(boss_stk_t)]; /* 128 bytes */
 
-/*===========================================================================
-    I D L E _ M A I N
----------------------------------------------------------------------------*/
-int idle_main(void *p_arg)
+int idle_task(void *p_arg)
 {
   for(;;)
   {
@@ -121,19 +109,17 @@ int idle_main(void *p_arg)
 ---------------------------------------------------------------------------*/
 int main(void)
 {
-  Boss_init(idle_main, &idle_tcb, (boss_stk_t *)idle_stack, sizeof(idle_stack));
+  (void)Boss_init(idle_task, _BOSS_NULL, idle_stack, sizeof(idle_stack));
   
-  Boss_task_create( aa_main,              /* Task Entry Point       */
+  Boss_task_create( aa_task,              /* Task Entry Point       */
                     _BOSS_NULL,           /* Task Argument          */
-                    &aa_tcb,              /* TCB(Task Control Block)*/
-                    AA_PRIO_1,            /* Priority               */
-                    (boss_stk_t *)aa_stk, /* Stack Point (Base)     */
+                    aa_stk,               /* Stack Point (Base)     */
                     sizeof(aa_stk),       /* Stack Size (Bytes)     */
+                    PRIO_1,               /* Priority               */
                     "AA"
                     );
   
-  Boss_task_create( bb_main, _BOSS_NULL, &bb_tcb, BB_PRIO_2,
-                    (boss_stk_t *)bb_stk, sizeof(bb_stk), "BB" );
+  Boss_task_create(bb_task, _BOSS_NULL, bb_stk, sizeof(bb_stk), PRIO_2, "BB");
 
   Boss_device_init();
   Boss_start();               /* Boss Scheduling Start */
@@ -168,74 +154,89 @@ int main(void)
              AA_TASK count = 18 
              AA_TASK count = 19 
              AA_TASK count = 20 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     32%(168/512)    0.002%         1
-               AA     32%(168/512)    0.051%        21
-             Idle     56%( 72/128)   99.946%        20
-            [TOTAL] :                99.999%        42
-
-               total_us = 10000344
+            
+            ==================================================
+            PRI  NAME  STACK %(u/t)   C P U   Status  Context
+            --------------------------------------------------
+              2    BB  32%(168/512)   0.002%   RUN         1
+              1    AA  32%(168/512)   0.050%   Wait       21
+            255  Idle  59%( 76/128)  99.946%   Pend       20
+            
+            ---[TOTAL]-------------  99.998%  ------      42
+            
+               total_us = 10000341
                SysTick->LOAD = 11999
-
+            
+            [ M S P ] %(u/t) :  10% (104/1024)
+            
             [Mmory]  Peak byte  Used byte  Total  Block  first
             [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
+            
             BB_TASK count = 1 
              AA_TASK count = 21 
              AA_TASK count = 22 
              AA_TASK count = 23 
              AA_TASK count = 24 
              AA_TASK count = 25 
-
-             ------- 중략 -------
-
+             AA_TASK count = 26 
+             AA_TASK count = 27 
+             AA_TASK count = 28 
+             AA_TASK count = 29 
+             AA_TASK count = 30 
+             ------ 중략 ------
+             AA_TASK count = 90 
+             AA_TASK count = 91 
+             AA_TASK count = 92 
+             AA_TASK count = 93 
+             AA_TASK count = 94 
+             AA_TASK count = 95 
              AA_TASK count = 96 
              AA_TASK count = 97 
              AA_TASK count = 98 
              AA_TASK count = 99 
              AA_TASK count = 100 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     48%(248/512)    0.051%         5
-               AA     32%(168/512)    0.052%       101
-             Idle     56%( 72/128)   99.896%       104
-            [TOTAL] :                99.999%       210
-
-               total_us = 50024063
+            
+            ==================================================
+            PRI  NAME  STACK %(u/t)   C P U   Status  Context
+            --------------------------------------------------
+              2    BB  48%(248/512)   0.058%   RUN         5
+              1    AA  32%(168/512)   0.051%   Wait      101
+            255  Idle  59%( 76/128)  99.889%   Pend      104
+            
+            ---[TOTAL]-------------  99.998%  ------     210
+            
+               total_us = 50028063
                SysTick->LOAD = 11999
-
+            
+            [ M S P ] %(u/t) :  10% (104/1024)
+            
             [Mmory]  Peak byte  Used byte  Total  Block  first
             [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
+            
             BB_TASK count = 5 
              AA_TASK count = 101 
             [AA TASK] Exit 
-
-             ------- 중략 -------
-             
+            
+            ------ 중략 ------
+            
             BB_TASK count = 9 
-
-            [ M S P ] %(u/t) :  10% (112/1024)
-
-            [TASK]    STACK %(u/t)    C P U    Context
-            ------------------------------------------
-               BB     48%(248/512)    0.053%        10
-             Idle     56%( 72/128)   99.919%       110
-            [TOTAL] :                99.972%       120
-
-               total_us = 100050061
+            
+            ==================================================
+            PRI  NAME  STACK %(u/t)   C P U   Status  Context
+            --------------------------------------------------
+              2    BB  48%(248/512)   0.061%   RUN        10
+            255  Idle  59%( 76/128)  99.911%   Pend      110
+            
+            ---[TOTAL]-------------  99.972%  ------     120
+            
+               total_us = 100059062
                SysTick->LOAD = 11999
-
+            
+            [ M S P ] %(u/t) :  10% (104/1024)
+            
             [Mmory]  Peak byte  Used byte  Total  Block  first
             [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-
+            
             BB_TASK count = 10 
             [BB TASK] Exit 
 
