@@ -172,7 +172,7 @@ boss_reg_t  _isr_nesting = 0;
 /*===========================================================================
     _ B O S S _ S T K _ I N I T
 ---------------------------------------------------------------------------*/
-boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
+boss_stk_t *_Boss_stk_init( int (*task_entry)(void *p_arg), void *p_arg,
                                 boss_stk_t *sp_base,  boss_uptr_t stk_bytes)
 {
   boss_uptr_t tmp;
@@ -193,7 +193,7 @@ boss_stk_t *_Boss_stk_init( void (*task)(void *p_arg), void *p_arg,
   *sp = (boss_stk_t)(tmp >> 8);   /* PC(H) */
   sp--;
   
-  tmp = (boss_uptr_t)task;
+  tmp = (boss_uptr_t)task_entry;
   *sp = (boss_stk_t)tmp;          /* PC(L) : Task Entry Point */
   sp--;
   *sp = (boss_stk_t)(tmp >> 8);   /* PC(H) */
