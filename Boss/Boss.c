@@ -51,13 +51,18 @@ BOSS_TID_T Boss_self(void)
     _   B O S S _ T C B _ I N I T
 ---------------------------------------------------------------------------*/
 static boss_tcb_t *_Boss_tcb_init(int (*task_entry)(void *p_arg), void *p_arg,
-                                  boss_stk_t *sp_base, boss_uptr_t stk_bytes,
+                                  boss_stk_t *p_stack, boss_uptr_t stk_bytes,
                                             boss_prio_t prio, const char *name)
 {
-  boss_tcb_t *p_tcb = (boss_tcb_t *)sp_base;
+  /* TCB Align Sizeof */
+  #define TCB_SIZE      ( (sizeof(boss_tcb_t) + (sizeof(boss_align_t)-1)) \
+                                  & ~((boss_uptr_t)(sizeof(boss_align_t)-1)) )
   
-  sp_base     = (boss_stk_t *)(p_tcb + 1);
-  stk_bytes   = stk_bytes - sizeof(boss_tcb_t);
+  
+  boss_tcb_t *p_tcb   = (boss_tcb_t *)p_stack;
+  boss_stk_t *sp_base = (boss_stk_t *)((boss_uptr_t)p_tcb + TCB_SIZE);
+  
+  stk_bytes = stk_bytes - TCB_SIZE;
   
   p_tcb->run_next   = _BOSS_NULL;
   p_tcb->prio       = prio;
@@ -100,7 +105,7 @@ static boss_tcb_t *_Boss_tcb_init(int (*task_entry)(void *p_arg), void *p_arg,
     B O S S _ I N I T
 ---------------------------------------------------------------------------*/
 BOSS_TID_T Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
-                                    boss_stk_t *sp_base, boss_uptr_t stk_bytes)
+                                    boss_stk_t *p_stack, boss_uptr_t stk_bytes)
 {
   boss_tcb_t *p_idle_tcb;
   
@@ -109,7 +114,7 @@ BOSS_TID_T Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
   BOSS_IRQ_DISABLE();
   _sched_locking  = 1;              /* 스케줄링 금지 */
   
-  p_idle_tcb = _Boss_tcb_init(idle_task_entry, p_arg, sp_base, stk_bytes,
+  p_idle_tcb = _Boss_tcb_init(idle_task_entry, p_arg, p_stack, stk_bytes,
                                                         PRIO_BOSS_IDLE, "Idle");
   _sched_tcb_list = p_idle_tcb;     /* Idle Task TCB */
   BOSS_IRQ_RESTORE();
@@ -362,13 +367,13 @@ void Boss_sleep(boss_tmr_ms_t timeout)
     B O S S _ T A S K _ C R E A T E
 ---------------------------------------------------------------------------*/
 BOSS_TID_T Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
-                                  boss_stk_t *sp_base, boss_uptr_t stk_bytes,
+                                  boss_stk_t *p_stack, boss_uptr_t stk_bytes,
                                             boss_prio_t prio, const char *name)
 {
   boss_tcb_t *p_tcb;
   BOSS_ASSERT(_BOSS_ISR_() == 0);
   
-  p_tcb = _Boss_tcb_init(task_entry, p_arg, sp_base, stk_bytes, prio, name);
+  p_tcb = _Boss_tcb_init(task_entry, p_arg, p_stack, stk_bytes, prio, name);
   BOSS_IRQ_DISABLE();
   _Boss_sched_list_insert(p_tcb);
   BOSS_IRQ_RESTORE();
