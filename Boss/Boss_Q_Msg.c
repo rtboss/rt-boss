@@ -169,8 +169,10 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
 {  
   _msg_link_t   msg_wait;
   boss_reg_t    irq_storage;
-
-  Boss_self()->indicate = BOSS_INDICATE_NULL;
+  
+  BOSS_ASSERT((_BOSS_ISR_() == 0) || (timeout == NO_WAIT));
+  
+  Boss_self()->indicate = BOSS_INDICATE_CLEAR;
   
   msg_wait.prev   = _BOSS_NULL;
   msg_wait.next   = _BOSS_NULL;

@@ -59,11 +59,12 @@ static boss_tcb_t *_Boss_tcb_init(int (*task_entry)(void *p_arg), void *p_arg,
   sp_base     = (boss_stk_t *)(p_tcb + 1);
   stk_bytes   = stk_bytes - sizeof(boss_tcb_t);
   
-  p_tcb->run_next = _BOSS_NULL;
-  p_tcb->prio   = prio;
+  p_tcb->run_next   = _BOSS_NULL;
+  p_tcb->prio       = prio;
+  p_tcb->indicate   = BOSS_INDICATE_CLEAR;
   
-  p_tcb->sp     = _Boss_stk_init(task_entry, p_arg, sp_base, stk_bytes);
-    
+  p_tcb->sp         = _Boss_stk_init(task_entry, p_arg, sp_base, stk_bytes);
+  
   #ifdef _BOSS_TCB_NAME_SIZE
   {
     int  i;
@@ -306,7 +307,7 @@ boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout)
   if( timeout == WAIT_FOREVER )                     // timeout : 0xffffffff
   {
     BOSS_IRQ_DISABLE();
-    if(cur_tcb->indicate == BOSS_INDICATE_NULL) {
+    if(cur_tcb->indicate == BOSS_INDICATE_CLEAR) {
       _Boss_sched_list_remove(cur_tcb);             /* 스케줄러 리스트에서 제거 */
     }
     BOSS_IRQ_RESTORE();
@@ -322,7 +323,7 @@ boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout)
     Boss_tmr_start((boss_tmr_t *)&timeout_tmr, timeout, _timeout_callback);
 
     BOSS_IRQ_DISABLE();
-    if(cur_tcb->indicate == BOSS_INDICATE_NULL) {
+    if(cur_tcb->indicate == BOSS_INDICATE_CLEAR) {
       _Boss_sched_list_remove(cur_tcb);             /* 스케줄러 리스트에서 제거 */
     }
     BOSS_IRQ_RESTORE();
@@ -345,7 +346,7 @@ void Boss_sleep(boss_tmr_ms_t timeout)
   BOSS_ASSERT(timeout != NO_WAIT);                        // timeout : 0x00000000
   BOSS_ASSERT(timeout != WAIT_FOREVER);                   // timeout : 0xffffffff
   
-  Boss_self()->indicate = BOSS_INDICATE_NULL;
+  Boss_self()->indicate = BOSS_INDICATE_CLEAR;
 
   (void)_Boss_sched_timeout_wait(timeout);    // timeout : 1 ~ 0xfffffffe
 }

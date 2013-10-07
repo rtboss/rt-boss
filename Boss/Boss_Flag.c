@@ -86,6 +86,8 @@ boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_reg_t wait_opt,
   boss_flags_t  flags;
   boss_reg_t    irq_storage;
   
+  BOSS_ASSERT((_BOSS_ISR_() == 0) || (timeout == NO_WAIT));
+  
   flag_link.prev        = _BOSS_NULL;
   flag_link.next        = _BOSS_NULL;
   flag_link.wait_flags  = wait_flags;
@@ -118,7 +120,7 @@ boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_reg_t wait_opt,
     }
 
     do {
-      Boss_self()->indicate = BOSS_INDICATE_NULL;
+      Boss_self()->indicate = BOSS_INDICATE_CLEAR;
       BOSS_IRQ_RESTORE_SR(irq_storage);
 
       timeout = _Boss_sched_timeout_wait(timeout);          /* ´ë±â (waiting)*/

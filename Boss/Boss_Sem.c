@@ -72,7 +72,7 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
     p_sem->wait_list = &sem_wait;
     
     do {      
-      Boss_self()->indicate = BOSS_INDICATE_NULL;
+      Boss_self()->indicate = BOSS_INDICATE_CLEAR;
       BOSS_IRQ_RESTORE_SR(irq_storage);
     
       timeout = _Boss_sched_timeout_wait(timeout);            /* ´ë±â (waiting)*/

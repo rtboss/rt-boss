@@ -31,7 +31,7 @@
 
 #define BOSS_INDICATE_TIMEOUT       ((boss_u08_t)(0x80))    /* 타임아웃(슬립) */
 #define BOSS_INDICATE_SUCCESS       ((boss_u08_t)(0x01))    /* 성공 / 완료    */
-#define BOSS_INDICATE_NULL          ((boss_u08_t)(0x00))
+#define BOSS_INDICATE_CLEAR         ((boss_u08_t)(0x00))
 
 /*---------------------------------------------------------------------------*/
 /*                        TCB (Task Control Block)                           */
