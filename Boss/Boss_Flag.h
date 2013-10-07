@@ -47,6 +47,6 @@ void Boss_flag_grp_init(boss_flag_grp_t *p_grp);
 void Boss_flag_send(boss_flag_grp_t *p_grp, boss_flags_t set_flags);
 void Boss_flag_clear(boss_flag_grp_t *p_grp, boss_flags_t clr_flags);
 
-boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_reg_t wait_opt,
-                                boss_flags_t wait_flags, boss_tmr_ms_t timeout);
+boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_flags_t wait_flags,
+                                    boss_reg_t wait_opt, boss_tmr_ms_t timeout);
 #endif  /* _BOSS_FLAG_H_ */

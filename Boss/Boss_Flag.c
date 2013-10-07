@@ -79,8 +79,8 @@ void Boss_flag_send(boss_flag_grp_t *p_grp, boss_flags_t set_flags)
 /*===========================================================================
     B O S S _ F L A G _ W A I T
 ---------------------------------------------------------------------------*/
-boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_reg_t wait_opt,
-                                boss_flags_t wait_flags, boss_tmr_ms_t timeout)
+boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_flags_t wait_flags,
+                                    boss_reg_t wait_opt, boss_tmr_ms_t timeout)
 {
   _flag_link_t  flag_link;
   boss_flags_t  flags;
