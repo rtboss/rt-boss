@@ -18,8 +18,9 @@
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
-boss_msg_q_t  test_msg_q;
-boss_msg_t    test_msg_fifo[10];
+
+boss_flag_grp_t test_flag_grp;
+
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
@@ -33,37 +34,24 @@ boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
 {  
+  int aa_count = 0;
+  
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_msg_q Init\n");
-  Boss_msg_q_init(&test_msg_q, test_msg_fifo, sizeof(test_msg_fifo), MSG_Q_PRIORITY);
+  PRINTF("test_flag_grp Init\n");
+  Boss_flag_grp_init(&test_flag_grp);
 
-  Boss_sleep(100); // BB TASK init wait
+  Boss_sleep(100); // TASK init wait
   
   for(;;)
   {
-    boss_msg_t msg;
-
-    PRINTF("\n[%s] MSG Q Wait\n", Boss_self()->name);
-    msg = Boss_msg_wait(&test_msg_q, 5000);   /* 5초 타임아웃 */
-
-    switch(msg.m_cmd)
-    {
-      case M_CMD_EMPTY :  // 타임아웃
-        PRINTF("[%s] MSG Q Wait Timeout\n", Boss_self()->name);
-        break;
-
-      case M_CMD_1 :
-        PRINTF("[%s] m_cmd = M_CMD_1 : param = %d\n", Boss_self()->name, msg.param);
-        break;
-      
-      default :
-        BOSS_ASSERT(_BOSS_FALSE);   // Error : 유효하지않은 메시지 명령어
-        break;
-    }
-  }
+    Boss_sleep(2000);    
     
-  return 0;   // Task Exit
+    PRINTF("\n[%s] (%d) Boss_flag_send()\n", Boss_self()->name, ++aa_count);
+    Boss_flag_send(&test_flag_grp, 0x0001);
+  }
+  
+  return 0;       // 테스크 종료
 }
 
 
@@ -74,23 +62,23 @@ boss_stk_t bb_stk[ 512 / sizeof(boss_stk_t)];
 
 int bb_task(void *p_arg)
 {
-  int bb_count = 0;
-  
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
+
+  Boss_sleep(100); // TASK init wait
   
   for(;;)
   {
-    //Boss_sleep(7000);  // 타임아웃 테스트
-    
-    Boss_sleep(2000);  /* 2초 */
-    
-    ++bb_count;
-    
-    PRINTF("[%s] Boss_msg_send( param = %d )\n", Boss_self()->name, bb_count);
-    
-    if( _BOSS_SUCCESS != Boss_msg_send(&test_msg_q, M_CMD_1, (boss_uptr_t)bb_count) )
+    boss_u16_t flags = Boss_flag_wait(&test_flag_grp, 0x0001,
+                                                _FLAG_OPT_OR, 20*1000/*20초*/);
+    if(flags != 0)
     {
-      PRINTF("FAILURE : MSG Q FIFO FULL\n");
+      PRINTF("[%s] Boss_flag_wait(OR + CONSUME) flags = 0x%04x\n",
+                                                      Boss_self()->name, flags);
+      Boss_flag_clear(&test_flag_grp, 0x0001); // 수신한 flag 수동 클리어
+    }
+    else
+    {
+      PRINTF("[%s] Timeout Flag Wait\n", Boss_self()->name);
     }
   }
   
@@ -143,39 +131,27 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            test_msg_q Init
+            test_flag_grp Init
             [BB TASK] Init 
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 1 )
-            [AA] m_cmd = M_CMD_1 : param = 1
+            [AA] (1) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 2 )
-            [AA] m_cmd = M_CMD_1 : param = 2
+            [AA] (2) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 3 )
-            [AA] m_cmd = M_CMD_1 : param = 3
+            [AA] (3) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 4 )
-            [AA] m_cmd = M_CMD_1 : param = 4
+            [AA] (4) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 5 )
-            [AA] m_cmd = M_CMD_1 : param = 5
+            [AA] (5) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 6 )
-            [AA] m_cmd = M_CMD_1 : param = 6
+            [AA] (6) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
             
-            [AA] MSG Q Wait
-            [BB] Boss_msg_send( param = 7 )
-            [AA] m_cmd = M_CMD_1 : param = 7
-            
-            [AA] MSG Q Wait
-
-                ------- 중략 -------
-
+            [AA] (7) Boss_flag_send()
+            [BB] Boss_flag_wait( OR ) flags = 0x0001
 */

@@ -25,19 +25,15 @@
 void Boss_device_init(void);
 
 /*===========================================================================
-    [ A A _ T A S K ]
+    A A _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    aa_tcb;
-boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
-/*===============================================
-    A A _ M A I N
------------------------------------------------*/
-int aa_main(void *p_arg)
+int aa_task(void *p_arg)
 {  
   int aa_count = 0;
   
-  PRINTF("[AA_TASK] Init \n");
+  PRINTF("[%s TASK] Init \n", Boss_self()->name);
   
   for(;;)
   {    
@@ -51,31 +47,27 @@ int aa_main(void *p_arg)
     }
   }
   
-  PRINTF("[AA_TASK] Exit \n");
+  PRINTF("[%s TASK] Exit \n", Boss_self()->name);
   
   return 0;       // 테스크 종료
 }
 
 
 /*===========================================================================
-    [ B B _ T A S K ]
+    B B _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    bb_tcb;
-boss_align_t  bb_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t bb_stk[ 512 / sizeof(boss_stk_t)];
 
-/*===============================================
-    B B _ M A I N
------------------------------------------------*/
-int bb_main(void *p_arg)
+int bb_task(void *p_arg)
 {
   int bb_count = 0;
   
-  PRINTF("[BB_TASK] Init \n");
+  PRINTF("[%s TASK] Init \n", Boss_self()->name);
   
   for(;;)
   {
-    Boss_sleep(10 * 1000);   /* 10 Sec */
-
+    Boss_sleep(10 * 1000);  /* 10 Sec */
+    
     #ifdef _BOSS_SPY_
     Boss_spy_report();
     #endif
@@ -90,7 +82,7 @@ int bb_main(void *p_arg)
     }
   }
 
-  PRINTF("[BB_TASK] Exit \n");
+  PRINTF("[%s TASK] Exit \n", Boss_self()->name);
   
   return 0;       // 테스크 종료
 }
@@ -101,13 +93,9 @@ int bb_main(void *p_arg)
 *                         RT-BOSS ( IDLE TASK )                               *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
-boss_tcb_t    idle_tcb;
-boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
+boss_stk_t idle_stack[ 160 / sizeof(boss_stk_t)];
 
-/*===========================================================================
-    I D L E _ M A I N
----------------------------------------------------------------------------*/
-int idle_main(void *p_arg)
+int idle_task(void *p_arg)
 {
   for(;;)
   {
@@ -120,19 +108,18 @@ int idle_main(void *p_arg)
 ---------------------------------------------------------------------------*/
 int main(void)
 {
-  Boss_init(idle_main, &idle_tcb, (boss_stk_t *)idle_stack, sizeof(idle_stack));
+  (void)Boss_init(idle_task, _BOSS_NULL, idle_stack, sizeof(idle_stack));
   
-  Boss_task_create( aa_main,              /* Task Entry Point       */
-                    _BOSS_NULL,           /* Task Argument          */
-                    &aa_tcb,              /* TCB(Task Control Block)*/
-                    AA_PRIO_1,            /* 우선순위               */
-                    (boss_stk_t *)aa_stk, /* 스택 포인터(base)      */
-                    sizeof(aa_stk),       /* 스택 크기(Bytes)       */
-                    "AA"                  /* 테스크 이름            */
-                    );
+  (void)Boss_task_create( aa_task,              /* Task Entry Point       */
+                          _BOSS_NULL,           /* Task Argument          */
+                          aa_stk,               /* 스택 포인터(base)      */
+                          sizeof(aa_stk),       /* 스택 크기(Bytes)       */
+                          PRIO_1,               /* 우선순위               */
+                          "AA"                  /* 테스크 이름            */
+                        );
   
-  Boss_task_create( bb_main, _BOSS_NULL, &bb_tcb, BB_PRIO_2,
-                    (boss_stk_t *)bb_stk, sizeof(bb_stk), "BB" );
+  (void)Boss_task_create(bb_task, _BOSS_NULL, bb_stk, sizeof(bb_stk),
+                                                              PRIO_2, "BB");
 
   Boss_device_init();         /* 타이머 초기화 */
   Boss_start();               /* Boss Scheduling Start */
@@ -154,77 +141,114 @@ int main(void)
        호출하여 초기화 해야 정상적인 CPU 점유율을 확인 할수 있다.
 
 
-### 실행결과 ###
 
-  [AA_TASK] Init 
-  [BB_TASK] Init 
-   [AA_TASK] (1초마다) count = 1 
-   [AA_TASK] (1초마다) count = 2 
-   [AA_TASK] (1초마다) count = 3 
-   [AA_TASK] (1초마다) count = 4 
-   [AA_TASK] (1초마다) count = 5 
-   [AA_TASK] (1초마다) count = 6 
-   [AA_TASK] (1초마다) count = 7 
-   [AA_TASK] (1초마다) count = 8 
-   [AA_TASK] (1초마다) count = 9 
-   [AA_TASK] (1초마다) count = 10 
-  
-  [ M S P ] %(u/t) :  10% (112/1024)
-  
-  [TASK]   STACK %(u/t)    C P U    Context
-  ------------------------------------------
-     BB    31%(160/512)    0.002%         1
-     AA    32%(168/512)    0.031%        11
-   Idle    56%( 72/128)   99.966%        10
-  [TOTAL] :               99.999%        22
-  
-     total_us = 10000403
-     SysTick->LOAD = 11999
-  
-  [Mmory]  Peak byte  Used byte  Total  Block  first
-  [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-  
-   [AA_TASK] (1초마다) count = 11 
-   [AA_TASK] (1초마다) count = 12 
-   [AA_TASK] (1초마다) count = 13 
-  
-   --- 중략 ----
-   
-   [AA_TASK] (1초마다) count = 97 
-   [AA_TASK] (1초마다) count = 98 
-   [AA_TASK] (1초마다) count = 99 
-   [AA_TASK] (1초마다) count = 100 
-  [AA_TASK] Exit 
-  
-  [ M S P ] %(u/t) :  10% (112/1024)
-  
-  [TASK]   STACK %(u/t)    C P U    Context
-  ------------------------------------------
-     BB    48%(248/512)    0.055%        10
-   Idle    56%( 72/128)   99.911%       109
-  [TOTAL] :               99.966%       119
-  
-     total_us = 100054052
-     SysTick->LOAD = 11999
-  
-  [Mmory]  Peak byte  Used byte  Total  Block  first
-  [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-  
-  
-  [ M S P ] %(u/t) :  10% (112/1024)
-  
-  [TASK]   STACK %(u/t)    C P U    Context
-  ------------------------------------------
-     BB    48%(248/512)    0.055%        11
-   Idle    56%( 72/128)   99.914%       110
-  [TOTAL] :               99.969%       121
-  
-     total_us = 110059052
-     SysTick->LOAD = 11999
-  
-  [Mmory]  Peak byte  Used byte  Total  Block  first
-  [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
-  
-  [BB_TASK] Exit 
+      ########## 실행 결과 ##########
+      
+        [AA TASK] Init 
+        [BB TASK] Init 
+         [AA_TASK] (1초마다) count = 1 
+         [AA_TASK] (1초마다) count = 2 
+         [AA_TASK] (1초마다) count = 3 
+         [AA_TASK] (1초마다) count = 4 
+         [AA_TASK] (1초마다) count = 5 
+         [AA_TASK] (1초마다) count = 6 
+         [AA_TASK] (1초마다) count = 7 
+         [AA_TASK] (1초마다) count = 8 
+         [AA_TASK] (1초마다) count = 9 
+         [AA_TASK] (1초마다) count = 10 
+        
+        ==================================================
+        PRI  NAME  STACK %(u/t)   C P U   Status  Context
+        --------------------------------------------------
+          2    BB  36%(168/464)   0.002%   RUN         1
+          1    AA  36%(168/464)   0.031%   Wait       11
+        255  Idle  64%( 72/112)  99.965%   Pend       10
+        
+        ---[TOTAL]-------------  99.998%  ------      22
+        
+           total_us = 10000410
+           SysTick->LOAD = 11999
+        
+        [ M S P ] %(u/t) :  10% (104/1024)
+        
+        [Mmory]  Peak byte  Used byte  Total  Block  first
+        [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+        
+         [AA_TASK] (1초마다) count = 11 
+         [AA_TASK] (1초마다) count = 12 
+         [AA_TASK] (1초마다) count = 13 
+         [AA_TASK] (1초마다) count = 14 
+         [AA_TASK] (1초마다) count = 15 
 
+         ------------ 중 략 ------------
+
+         [AA_TASK] (1초마다) count = 86 
+         [AA_TASK] (1초마다) count = 87 
+         [AA_TASK] (1초마다) count = 88 
+         [AA_TASK] (1초마다) count = 89 
+         [AA_TASK] (1초마다) count = 90 
+        
+        ==================================================
+        PRI  NAME  STACK %(u/t)   C P U   Status  Context
+        --------------------------------------------------
+          2    BB  55%(256/464)   0.063%   RUN         9
+          1    AA  36%(168/464)   0.032%   Wait       91
+        255  Idle  64%( 72/112)  99.903%   Pend       98
+        
+        ---[TOTAL]-------------  99.998%  ------     198
+        
+           total_us = 90056063
+           SysTick->LOAD = 11999
+        
+        [ M S P ] %(u/t) :  10% (104/1024)
+        
+        [Mmory]  Peak byte  Used byte  Total  Block  first
+        [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+        
+         [AA_TASK] (1초마다) count = 91 
+         [AA_TASK] (1초마다) count = 92 
+         [AA_TASK] (1초마다) count = 93 
+         [AA_TASK] (1초마다) count = 94 
+         [AA_TASK] (1초마다) count = 95 
+         [AA_TASK] (1초마다) count = 96 
+         [AA_TASK] (1초마다) count = 97 
+         [AA_TASK] (1초마다) count = 98 
+         [AA_TASK] (1초마다) count = 99 
+         [AA_TASK] (1초마다) count = 100 
+        [AA TASK] Exit 
+        
+        ==================================================
+        PRI  NAME  STACK %(u/t)   C P U   Status  Context
+        --------------------------------------------------
+          2    BB  55%(256/464)   0.064%   RUN        10
+        255  Idle  64%( 72/112)  99.902%   Pend      109
+        
+        ---[TOTAL]-------------  99.966%  ------     119
+        
+           total_us = 100063062
+           SysTick->LOAD = 11999
+        
+        [ M S P ] %(u/t) :  10% (104/1024)
+        
+        [Mmory]  Peak byte  Used byte  Total  Block  first
+        [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+        
+        
+        ==================================================
+        PRI  NAME  STACK %(u/t)   C P U   Status  Context
+        --------------------------------------------------
+          2    BB  55%(256/464)   0.064%   RUN        11
+        255  Idle  64%( 72/112)  99.905%   Pend      110
+        
+        ---[TOTAL]-------------  99.969%  ------     121
+        
+           total_us = 110069062
+           SysTick->LOAD = 11999
+        
+        [ M S P ] %(u/t) :  10% (104/1024)
+        
+        [Mmory]  Peak byte  Used byte  Total  Block  first
+        [Info]     0 ( 0%)    0 ( 0%)  1024     0       0
+        
+        [BB TASK] Exit 
 */
