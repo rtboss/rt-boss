@@ -25,19 +25,15 @@
 void Boss_device_init(void);
 
 /*===========================================================================
-    [ A A _ T A S K ]
+    A A _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    aa_tcb;
-boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
-/*===============================================
-    A A _ M A I N
------------------------------------------------*/
-int aa_main(void *p_arg)
+int aa_task(void *p_arg)
 {  
   int aa_count = 0;
   
-  PRINTF("[%s TASK] 시작 \n", Boss_self()->name);
+  PRINTF("[%s TASK] Init \n", Boss_self()->name);
   
   for(;;)
   {    
@@ -46,7 +42,7 @@ int aa_main(void *p_arg)
     PRINTF(" AA_TASK count = %d \n", ++aa_count);
   }
   
-  return 0;
+  return 0;       // 테스크 종료
 }
 
 
@@ -55,13 +51,9 @@ int aa_main(void *p_arg)
 *                         RT-BOSS ( IDLE TASK )                               *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
-boss_tcb_t    idle_tcb;
-boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
+boss_stk_t idle_stack[ 160 / sizeof(boss_stk_t)];
 
-/*===========================================================================
-    I D L E _ M A I N
----------------------------------------------------------------------------*/
-int idle_main(void *p_arg)
+int idle_task(void *p_arg)
 {
   for(;;)
   {
@@ -74,16 +66,15 @@ int idle_main(void *p_arg)
 ---------------------------------------------------------------------------*/
 int main(void)
 {
-  Boss_init(idle_main, &idle_tcb, (boss_stk_t *)idle_stack, sizeof(idle_stack));
+  (void)Boss_init(idle_task, _BOSS_NULL, idle_stack, sizeof(idle_stack));
   
-  Boss_task_create( aa_main,              /* Task Entry Point       */
-                    _BOSS_NULL,           /* Task Argument          */
-                    &aa_tcb,              /* TCB(Task Control Block)*/
-                    AA_PRIO_1,            /* 우선순위               */
-                    (boss_stk_t *)aa_stk, /* 스택 포인터(base)      */
-                    sizeof(aa_stk),       /* 스택 크기(Bytes)       */
-                    "AA"                  /* 테스크 이름            */
-                    );
+  (void)Boss_task_create( aa_task,              /* Task Entry Point       */
+                          _BOSS_NULL,           /* Task Argument          */
+                          aa_stk,               /* 스택 포인터(base)      */
+                          sizeof(aa_stk),       /* 스택 크기(Bytes)       */
+                          PRIO_1,               /* 우선순위               */
+                          "AA"                  /* 테스크 이름            */
+                        );
 
   Boss_device_init();         /* 타이머 초기화 */
   Boss_start();               /* Boss Scheduling Start */
@@ -103,23 +94,24 @@ int main(void)
       4. Boss_start()       : 스케줄러 시작.
 
 
-### 실행결과 ###
+        ########## 실행 결과 ##########
 
-  [AA TASK] 시작 
-    AA_TASK count = 1 
-    AA_TASK count = 2 
-    AA_TASK count = 3 
-    AA_TASK count = 4 
-    AA_TASK count = 5 
-    AA_TASK count = 6 
-    AA_TASK count = 7 
-    AA_TASK count = 8 
-    AA_TASK count = 9 
-    AA_TASK count = 10 
-    AA_TASK count = 11 
-    AA_TASK count = 12 
-    AA_TASK count = 13 
-    AA_TASK count = 14 
-    ...
+              [AA TASK] Init 
+               AA_TASK count = 1 
+               AA_TASK count = 2 
+               AA_TASK count = 3 
+               AA_TASK count = 4 
+               AA_TASK count = 5 
+               AA_TASK count = 6 
+               AA_TASK count = 7 
+               AA_TASK count = 8 
+               AA_TASK count = 9 
+               AA_TASK count = 10 
+               AA_TASK count = 11 
+               AA_TASK count = 12 
+               AA_TASK count = 13 
+               AA_TASK count = 14 
+               AA_TASK count = 15 
+               ...
     
 */

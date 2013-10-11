@@ -27,16 +27,11 @@ boss_msg_t    test_msg_fifo[10];
 void Boss_device_init(void);
 
 /*===========================================================================
-    [ A A _ T A S K ]
+    A A _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    aa_tcb;
-boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
-
-/*===============================================
-    A A _ M A I N
------------------------------------------------*/
-int aa_main(void *p_arg)
+int aa_task(void *p_arg)
 {  
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
@@ -73,15 +68,11 @@ int aa_main(void *p_arg)
 
 
 /*===========================================================================
-    [ B B _ T A S K ]
+    B B _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    bb_tcb;
-boss_align_t  bb_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t bb_stk[ 512 / sizeof(boss_stk_t)];
 
-/*===============================================
-    B B _ M A I N
------------------------------------------------*/
-int bb_main(void *p_arg)
+int bb_task(void *p_arg)
 {
   int bb_count = 0;
   
@@ -103,7 +94,7 @@ int bb_main(void *p_arg)
     }
   }
   
-  return 0;   // Task Exit
+  return 0;       // 테스크 종료
 }
 
 
@@ -112,13 +103,9 @@ int bb_main(void *p_arg)
 *                         RT-BOSS ( IDLE TASK )                               *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
-boss_tcb_t    idle_tcb;
-boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
+boss_stk_t idle_stack[ 160 / sizeof(boss_stk_t)];
 
-/*===========================================================================
-    I D L E _ M A I N
----------------------------------------------------------------------------*/
-int idle_main(void *p_arg)
+int idle_task(void *p_arg)
 {
   for(;;)
   {
@@ -131,21 +118,20 @@ int idle_main(void *p_arg)
 ---------------------------------------------------------------------------*/
 int main(void)
 {
-  Boss_init(idle_main, &idle_tcb, (boss_stk_t *)idle_stack, sizeof(idle_stack));
+  (void)Boss_init(idle_task, _BOSS_NULL, idle_stack, sizeof(idle_stack));
   
-  Boss_task_create( aa_main,              /* Task Entry Point       */
-                    _BOSS_NULL,           /* Task Argument          */
-                    &aa_tcb,              /* TCB(Task Control Block)*/
-                    AA_PRIO_1,            /* Priority               */
-                    (boss_stk_t *)aa_stk, /* Stack Point (Base)     */
-                    sizeof(aa_stk),       /* Stack Size (Bytes)     */
-                    "AA"
-                    );
+  (void)Boss_task_create( aa_task,              /* Task Entry Point       */
+                          _BOSS_NULL,           /* Task Argument          */
+                          aa_stk,               /* 스택 포인터(base)      */
+                          sizeof(aa_stk),       /* 스택 크기(Bytes)       */
+                          PRIO_1,               /* 우선순위               */
+                          "AA"                  /* 테스크 이름            */
+                        );
   
-  Boss_task_create( bb_main, _BOSS_NULL, &bb_tcb, BB_PRIO_2,
-                    (boss_stk_t *)bb_stk, sizeof(bb_stk), "BB" );
+  (void)Boss_task_create(bb_task, _BOSS_NULL, bb_stk, sizeof(bb_stk),
+                                                              PRIO_2, "BB");
 
-  Boss_device_init();
+  Boss_device_init();         /* 타이머 초기화 */
   Boss_start();               /* Boss Scheduling Start */
   
   BOSS_ASSERT(_BOSS_FALSE);   /* Invalid */

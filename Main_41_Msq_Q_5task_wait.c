@@ -21,22 +21,17 @@
 boss_msg_q_t  test_msg_q;
 boss_msg_t    test_msg_fifo[10];
 
-
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 void Boss_device_init(void);
 
 /*===========================================================================
-    [ A A _ T A S K ]
+    A A _ T A S K
 ---------------------------------------------------------------------------*/
-boss_tcb_t    aa_tcb;
-boss_align_t  aa_stk[ 512 / sizeof(boss_align_t) ];         /* 512 bytes */
+boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
-/*===============================================
-    A A _ M A I N
------------------------------------------------*/
-int aa_main(void *p_arg)
+int aa_task(void *p_arg)
 {
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
@@ -62,17 +57,16 @@ int aa_main(void *p_arg)
       PRINTF("\n[%s] Boss_msg_send( param = %d )\n", Boss_self()->name, param_count);
     }
   }
-    
-  return 0;   // Task Exit
+  
+  return 0;       // 테스크 종료
 }
 
 
 /*===========================================================================
-    [ C x _ T A S K ]
+    C X _ T A S K
 ---------------------------------------------------------------------------*/
 #define CX_TASK_MAX   5
-
-boss_tcb_t    cx_tcb[CX_TASK_MAX];
+    
 boss_stk_t    cx_stk[CX_TASK_MAX][ 512 / sizeof(boss_stk_t) ];
 
 int cx_task(void *p_arg)
@@ -100,7 +94,7 @@ int cx_task(void *p_arg)
     }    
   }
   
-  return 0;   // Task Exit
+  return 0;       // 테스크 종료
 }
 
 
@@ -109,13 +103,9 @@ int cx_task(void *p_arg)
 *                         RT-BOSS ( IDLE TASK )                               *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
-boss_tcb_t    idle_tcb;
-boss_align_t  idle_stack[ 128 / sizeof(boss_align_t) ];     /* 128 bytes */
+boss_stk_t idle_stack[ 160 / sizeof(boss_stk_t)];
 
-/*===========================================================================
-    I D L E _ M A I N
----------------------------------------------------------------------------*/
-int idle_main(void *p_arg)
+int idle_task(void *p_arg)
 {
   for(;;)
   {
@@ -128,37 +118,35 @@ int idle_main(void *p_arg)
 ---------------------------------------------------------------------------*/
 int main(void)
 {
-  Boss_init(idle_main, &idle_tcb, (boss_stk_t *)idle_stack, sizeof(idle_stack));
+  (void)Boss_init(idle_task, _BOSS_NULL, idle_stack, sizeof(idle_stack));
   
-  Boss_task_create( aa_main,              /* Task Entry Point       */
-                    _BOSS_NULL,           /* Task Argument          */
-                    &aa_tcb,              /* TCB(Task Control Block)*/
-                    AA_PRIO_1,            /* Priority               */
-                    (boss_stk_t *)aa_stk, /* Stack Point (Base)     */
-                    sizeof(aa_stk),       /* Stack Size (Bytes)     */
-                    "AA"
-                    );
+  (void)Boss_task_create( aa_task,              /* Task Entry Point       */
+                          _BOSS_NULL,           /* Task Argument          */
+                          aa_stk,               /* 스택 포인터(base)      */
+                          sizeof(aa_stk),       /* 스택 크기(Bytes)       */
+                          PRIO_1,               /* 우선순위               */
+                          "AA"                  /* 테스크 이름            */
+                        );
 
   {
     int idx = 0;
-    boss_prio_t prio = Cx_PRIO_3;
+    boss_prio_t prio = PRIO_3;
   
     for(idx=0; idx < CX_TASK_MAX; idx++)
     {
       char name[10];
       sprintf(name, "C%02d", idx + 1);
-      Boss_task_create( cx_task,              /* Task Entry Point       */
-                      (void *)idx,            /* Task Argument          */
-                      &cx_tcb[idx],           /* TCB(Task Control Block)*/
-                      prio++,                 /* Priority               */
-                      cx_stk[idx],            /* Stack Point (Base)     */
-                      sizeof(cx_stk[idx]),    /* Stack Size (Bytes)     */
-                      name                    /* Task Name String       */
-                      );
+      (void)Boss_task_create( cx_task,              /* Task Entry Point     */
+                              (void *)idx,          /* Task Argument        */
+                              cx_stk[idx],          /* Stack Point (Base)   */
+                              sizeof(cx_stk[idx]),  /* Stack Size (Bytes)   */
+                              prio++,               /* Priority             */
+                              name                  /* Task Name String     */
+                            );
     }
   }
 
-  Boss_device_init();
+  Boss_device_init();         /* 타이머 초기화 */
   Boss_start();               /* Boss Scheduling Start */
   
   BOSS_ASSERT(_BOSS_FALSE);   /* Invalid */
