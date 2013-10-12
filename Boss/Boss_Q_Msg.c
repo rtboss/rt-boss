@@ -27,8 +27,8 @@ typedef enum {
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 void _Boss_schedule(void);
-void _Boss_sched_setting_indicate(boss_tcb_t *p_tcb, boss_u08_t indicate);
-boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout);
+void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate);
+boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 
 
 /*===========================================================================
@@ -104,7 +104,7 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
     p_best->msg.m_cmd = m_cmd;
     p_best->msg.param = param;
 
-    _Boss_sched_setting_indicate(p_best->p_tcb, BOSS_INDICATE_SUCCESS);
+    _Boss_sched_ready(p_best->p_tcb, BOSS_INDICATE_SUCCESS);
     
     sent = _BOSS_SUCCESS;
   }
@@ -201,7 +201,7 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
     msg_q->wait_list = &msg_wait;
     BOSS_IRQ_RESTORE_SR(irq_storage);
 
-    (void)_Boss_sched_timeout_wait(timeout);              /* 대기 (waiting)  */
+    (void)_Boss_sched_wait(timeout);              /* 대기 (waiting)  */
 
     BOSS_IRQ_DISABLE_SR(irq_storage);
     if((Boss_self()->indicate & BOSS_INDICATE_SUCCESS) == 0)    /* 타임아웃 */

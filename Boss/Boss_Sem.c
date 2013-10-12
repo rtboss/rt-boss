@@ -23,8 +23,8 @@
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 void _Boss_schedule(void);
-void _Boss_sched_setting_indicate(boss_tcb_t *p_tcb, boss_u08_t indicate);
-boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout);
+void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate);
+boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 
 
 /*===========================================================================
@@ -75,7 +75,7 @@ boss_reg_t Boss_sem_obtain(boss_sem_t *p_sem, boss_tmr_ms_t timeout)
       Boss_self()->indicate = BOSS_INDICATE_CLEAR;
       BOSS_IRQ_RESTORE_SR(irq_storage);
     
-      timeout = _Boss_sched_timeout_wait(timeout);            /* 대기 (waiting)*/
+      timeout = _Boss_sched_wait(timeout);                    /* 대기 (waiting)*/
     
       BOSS_IRQ_DISABLE_SR(irq_storage);
     } while((p_sem->sem_count == 0) && (timeout != 0));
@@ -125,7 +125,7 @@ void Boss_sem_release(boss_sem_t *p_sem)
       p_find = p_find->next;
     }
     
-    _Boss_sched_setting_indicate(p_best->p_tcb, BOSS_INDICATE_SUCCESS);
+    _Boss_sched_ready(p_best->p_tcb, BOSS_INDICATE_SUCCESS);
   }
   BOSS_IRQ_RESTORE();
 

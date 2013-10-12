@@ -270,9 +270,9 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
 
 
 /*===========================================================================
-    _   B O S S _ S C H E D _ S E T T I N G _ I N D I C A T E
+    _   B O S S _ S C H E D _ R E A D Y
 ---------------------------------------------------------------------------*/
-void _Boss_sched_setting_indicate(boss_tcb_t *p_tcb, boss_u08_t indicate)
+void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate)
 {
   BOSS_IRQ_DISABLE();
   p_tcb->indicate = p_tcb->indicate | indicate;
@@ -290,14 +290,14 @@ static void _timeout_callback(boss_tmr_t *p_tmr)
 {
   _timeout_tmr_t *p_timeout = (_timeout_tmr_t *)p_tmr;
 
-  _Boss_sched_setting_indicate(p_timeout->p_tcb, BOSS_INDICATE_TIMEOUT);
+  _Boss_sched_ready(p_timeout->p_tcb, BOSS_INDICATE_TIMEOUT);
 }
 
 
 /*===========================================================================
-    _   B O S S _ S C H E D _ T I M E O U T _ W A I T
+    _   B O S S _ S C H E D _ W A I T
 ---------------------------------------------------------------------------*/
-boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout)
+boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout)
 {  
   boss_tcb_t      *cur_tcb;
   
@@ -348,12 +348,12 @@ boss_tmr_ms_t _Boss_sched_timeout_wait(boss_tmr_ms_t timeout)
 ---------------------------------------------------------------------------*/
 void Boss_sleep(boss_tmr_ms_t timeout)
 {  
-  BOSS_ASSERT(timeout != NO_WAIT);                        // timeout : 0x00000000
-  BOSS_ASSERT(timeout != WAIT_FOREVER);                   // timeout : 0xffffffff
+  BOSS_ASSERT(timeout != NO_WAIT);                // timeout : 0x00000000
+  BOSS_ASSERT(timeout != WAIT_FOREVER);           // timeout : 0xffffffff
   
   Boss_self()->indicate = BOSS_INDICATE_CLEAR;
 
-  (void)_Boss_sched_timeout_wait(timeout);    // timeout : 1 ~ 0xfffffffe
+  (void)_Boss_sched_wait(timeout);                // timeout : 1 ~ 0xfffffffe
 }
 
 
