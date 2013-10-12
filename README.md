@@ -1,6 +1,31 @@
 RT-BOSS
 =======
-> [RT-BOSS 카페](http://cafe.naver.com/rtboss "http://cafe.naver.com/rtboss")
+> [RT-BOSS 네이버 카페](http://cafe.naver.com/rtboss "http://cafe.naver.com/rtboss")
+
+### V1.30 (2013/10/13) ###
+	- 시그널(Signal) 기능 제거. (Flag로 대체 가능)
+	- TCB 와 Stack 통합. (Stack에 TCB 할당)
+	- 세마포어 기능 개선.
+	- 예제 정리 및 Flag 예제 추가.
+
+
+### V1.29 (2013/10/02) ###
+	- 메시지 큐 기능 개선.
+	- 카운트 세마포어 구현.
+	- Mail Box 기능 제거. (메시지 큐로 대체가능)
+	- Task 상태 확인 추가.
+
+###### TimeOUT 정의 ######
+	- NO_WAIT      (0x00000000) : 대기 없이 결과 확인.
+	- WAIT_FOREVER (0xFFFFFFFF) : 결과를 받을때 까지 대기.
+	- NO_WAIT < timeout < WAIT_FOREVER : timeout 동안 결과 대기.
+
+
+### V1.28b (2013/09/22) ###
+	- Boss Flag 기능 추가.
+	- 시그널 인터페이스 정리.
+	- git CRLF 관련 개선.
+
 
 ### V1.27 (2013/08/26) ###
 	- 예제 코드 추가. ( Task, Timer, Signal 등 14개 )
