@@ -33,7 +33,7 @@ void Boss_device_init(void);
 boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
-{  
+{
   int aa_count = 0;
   
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
@@ -45,7 +45,7 @@ int aa_task(void *p_arg)
   
   for(;;)
   {
-    Boss_sleep(2000);    
+    Boss_sleep(2000);
     
     PRINTF("\n[%s] (%d) Boss_flag_send()\n", Boss_self()->name, ++aa_count);
     Boss_flag_send(&test_flag_grp, 0x0001);
@@ -68,7 +68,7 @@ int bb_task(void *p_arg)
   
   for(;;)
   {
-    boss_u16_t flags = Boss_flag_wait(&test_flag_grp, 0x0001,
+    boss_flags_t flags = Boss_flag_wait(&test_flag_grp, 0x0001,
                             _FLAG_OPT_OR + _FLAG_OPT_CONSUME, 20*1000/*20초*/);
     
                       /* [ _FLAG_OPT_CONSUME : 수신한 Flag는 자동 클리어됨. ] */

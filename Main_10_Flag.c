@@ -33,7 +33,7 @@ void Boss_device_init(void);
 boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
-{  
+{
   int aa_count = 0;
   
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
@@ -68,7 +68,7 @@ int bb_task(void *p_arg)
   
   for(;;)
   {
-    boss_u16_t flags = Boss_flag_wait(&test_flag_grp, 0x0001,
+    boss_flags_t flags = Boss_flag_wait(&test_flag_grp, 0x0001,
                                                 _FLAG_OPT_OR, 20*1000/*20√ */);
     if(flags != 0)
     {

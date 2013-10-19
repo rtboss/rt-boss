@@ -45,7 +45,7 @@ int aa_task(void *p_arg)
   
   for(;;)
   {
-    Boss_sleep(2000);  
+    Boss_sleep(2000);
     
     ++aa_count;
     
@@ -71,7 +71,7 @@ int cx_task(void *p_arg)
 
   for(;;)
   {
-    boss_u16_t flags = Boss_flag_wait(&test_flag_grp, FLAG_01,
+    boss_flags_t flags = Boss_flag_wait(&test_flag_grp, FLAG_01,
                             _FLAG_OPT_OR + _FLAG_OPT_CONSUME, 20*1000/*20√ */);
     if(flags != 0)
     {
