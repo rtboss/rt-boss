@@ -260,6 +260,9 @@ void Boss_device_init(void)
 *                                                                             *
 *=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
 */
+void _Boss_tick(boss_tmr_ms_t tick_ms);
+void _Boss_timer_tick(boss_tmr_ms_t tick_ms);
+
 /*===========================================================================
    Timer1 Compare Match A                              [ATmega128 Timer1 ISR]
 ---------------------------------------------------------------------------*/
@@ -267,6 +270,8 @@ ISR(TIMER1_COMPA_vect)
 {
   _BOSS_ISR_BEGIN();
   {
+    _Boss_tick(_BOSS_TICK_MS_);
+    
     _Boss_timer_tick(_BOSS_TICK_MS_);
   }
   _BOSS_ISR_FINIS();
