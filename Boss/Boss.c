@@ -38,6 +38,10 @@ void _Boss_context_switch(void);
 boss_stk_t *_Boss_stk_init( int (*task_entry)(void *p_arg), void *p_arg,
                                 boss_stk_t *sp_base,  boss_uptr_t stk_bytes);
 
+#ifdef _BOSS_SPY_
+void _Boss_spy_elapse_tick(boss_u32_t tick_ms);
+#endif
+
 /*===========================================================================
     B O S S _ S E L F
 ---------------------------------------------------------------------------*/
@@ -190,7 +194,11 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
     }
     else
     {
-      boss_tcb_t *p_prev = _sched_tcb_list;
+      boss_tcb_t *p_prev;
+      
+      BOSS_ASSERT(p_tcb->prio < PRIO_BOSS_IDLE);
+
+      p_prev = _sched_tcb_list;
 
       while(p_prev->run_next->prio <= p_tcb->prio)
       {
@@ -254,7 +262,6 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
     }
     else
     {
-      cur_tcb->quantum_ms = 0;
       BOSS_IRQ_DISABLE();
       _Boss_sched_list_remove(cur_tcb);
       _Boss_sched_list_insert(cur_tcb);
@@ -281,18 +288,20 @@ void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate)
 }
 
 
-/* Timeout Timer */
-typedef struct { boss_tmr_t tmr; boss_tcb_t *p_tcb; } _timeout_tmr_t;
-/*===========================================================================
-    _ T I M E O U T _ C A L L B A C K
----------------------------------------------------------------------------*/
-static void _timeout_callback(boss_tmr_t *p_tmr)
-{
-  _timeout_tmr_t *p_timeout = (_timeout_tmr_t *)p_tmr;
+/*
+*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
+*                           [ Timeout Wait ]                                  *
+*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*=====*
+*/
+typedef struct _wait_timeout_struct {
+  struct _wait_timeout_struct  *prev;
+  struct _wait_timeout_struct  *next;
 
-  _Boss_sched_ready(p_timeout->p_tcb, BOSS_INDICATE_TIMEOUT);
-}
+  boss_tmr_ms_t           timeout_ms;
+  boss_tcb_t              *p_tcb;
+} _wait_timeout_t;
 
+_wait_timeout_t *_wait_timeout_list = _BOSS_NULL;
 
 /*===========================================================================
     _   B O S S _ S C H E D _ W A I T
@@ -305,11 +314,13 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout)
   BOSS_ASSERT(_BOSS_ISR_() == 0);
   BOSS_ASSERT(Boss_sched_locking() == 0);
   
-  BOSS_ASSERT(timeout != NO_WAIT);                  // timeout : 0x00000000
-
   cur_tcb = Boss_self();
 
-  if( timeout == WAIT_FOREVER )                     // timeout : 0xffffffff
+  if( timeout == NO_WAIT )                          // timeout : 0x00000000
+  {
+    ;
+  }
+  else if( timeout == WAIT_FOREVER )                // timeout : 0xffffffff
   {
     BOSS_IRQ_DISABLE();
     if(cur_tcb->indicate == BOSS_INDICATE_CLEAR) {
@@ -321,22 +332,52 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout)
   }
   else                                              // timeout : 1 ~ 0xfffffffe
   {
-    _timeout_tmr_t  timeout_tmr;
+    boss_reg_t        irq_storage;
+    _wait_timeout_t   timeout_link;
 
-    timeout_tmr.tmr.prev  = _BOSS_NULL;
-    timeout_tmr.p_tcb     = cur_tcb;
-    Boss_tmr_start((boss_tmr_t *)&timeout_tmr, timeout, _timeout_callback);
+    //timeout_link.prev = &timeout_link;
+    //timeout_link.next = &timeout_link;
+    timeout_link.p_tcb      = cur_tcb;
+    timeout_link.timeout_ms = timeout;
 
-    BOSS_IRQ_DISABLE();
-    if(cur_tcb->indicate == BOSS_INDICATE_CLEAR) {
-      _Boss_sched_list_remove(cur_tcb);             /* 스케줄러 리스트에서 제거 */
+    BOSS_IRQ_DISABLE_SR(irq_storage);
+    if(cur_tcb->indicate == BOSS_INDICATE_CLEAR)
+    {
+      _Boss_sched_list_remove(cur_tcb);           /* 스케줄러 리스트에서 제거 */
+
+      /* Timeout 등록 */
+      if(_wait_timeout_list == _BOSS_NULL) {        // 첫번째 등록
+          timeout_link.prev   = &timeout_link;
+          timeout_link.next   = &timeout_link;
+          _wait_timeout_list  = &timeout_link;
+      } else {
+          timeout_link.prev = _wait_timeout_list->prev;
+          timeout_link.next = _wait_timeout_list; // _wait_timeout_list->prev->next 와 동일
+          _wait_timeout_list->prev->next  = &timeout_link;
+          _wait_timeout_list->prev        = &timeout_link;
+      }
+      BOSS_IRQ_RESTORE_SR(irq_storage);
+
+      _Boss_schedule();                           /* 문맥전환 실행 */
+
+      BOSS_IRQ_DISABLE_SR(irq_storage);
+      /* Timeout 제거 */
+      timeout_link.prev->next = timeout_link.next;
+      timeout_link.next->prev = timeout_link.prev;
+
+      if(_wait_timeout_list == &timeout_link)
+      {
+        if(timeout_link.next == &timeout_link) {  // 마지막 제거
+          BOSS_ASSERT(timeout_link.prev == &timeout_link);
+          _wait_timeout_list = _BOSS_NULL;
+        } else {
+          _wait_timeout_list = _wait_timeout_list->next;
+        }
+      }
     }
-    BOSS_IRQ_RESTORE();
+    BOSS_IRQ_RESTORE_SR(irq_storage);
     
-    _Boss_schedule();                               /* 문맥전환 실행 */
-
-    Boss_tmr_stop((boss_tmr_t *)&timeout_tmr);
-    timeout = timeout_tmr.tmr.tmr_ms;               /* 남은 시간 반환 */
+    timeout = timeout_link.timeout_ms;            /* 남은 시간 반환 */
   }
   
   return timeout;
@@ -348,12 +389,45 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout)
 ---------------------------------------------------------------------------*/
 void Boss_sleep(boss_tmr_ms_t timeout)
 {  
-  BOSS_ASSERT(timeout != NO_WAIT);                // timeout : 0x00000000
   BOSS_ASSERT(timeout != WAIT_FOREVER);           // timeout : 0xffffffff
-  
-  Boss_self()->indicate = BOSS_INDICATE_CLEAR;
 
-  (void)_Boss_sched_wait(timeout);                // timeout : 1 ~ 0xfffffffe
+  if(timeout != NO_WAIT)                          // timeout : 0x00000000 아닐때
+  {
+    Boss_self()->indicate = BOSS_INDICATE_CLEAR;
+
+    (void)_Boss_sched_wait(timeout);              // timeout : 1 ~ 0xfffffffe
+  }
+}
+
+
+/*===========================================================================
+    _   B O S S _ T I C K                                       [ Tick ISR ]
+---------------------------------------------------------------------------*/
+void _Boss_tick(boss_tmr_ms_t tick_ms)
+{
+  #ifdef _BOSS_SPY_
+  _Boss_spy_elapse_tick(tick_ms);
+  #endif
+
+  #ifdef _BOSS_RR_QUANTUM_MS
+  _Boss_sched_rr_quantum_tick(tick_ms);
+  #endif
+  
+  
+  if(_wait_timeout_list != _BOSS_NULL)
+  {
+    _wait_timeout_t *p_timeout = _wait_timeout_list;
+    
+    do {
+        if(tick_ms < p_timeout->timeout_ms) {
+            p_timeout->timeout_ms = p_timeout->timeout_ms - tick_ms;
+        } else {
+            p_timeout->timeout_ms = 0;          /* Timeout 완료 */
+            _Boss_sched_ready(p_timeout->p_tcb, BOSS_INDICATE_TIMEOUT);
+        }
+        p_timeout = p_timeout->next;
+    } while(p_timeout != _wait_timeout_list);
+  }
 }
 
 
@@ -389,8 +463,6 @@ BOSS_TID_T Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
 ---------------------------------------------------------------------------*/
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio)
 {
-  BOSS_ASSERT(new_prio < PRIO_BOSS_IDLE);
-  
   BOSS_IRQ_DISABLE();
   p_tcb->prio = new_prio;
   
