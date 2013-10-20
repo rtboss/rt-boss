@@ -55,20 +55,21 @@ void Boss_flag_clear(boss_flag_grp_t *p_grp, boss_flags_t clr_flags)
 ---------------------------------------------------------------------------*/
 void Boss_flag_send(boss_flag_grp_t *p_grp, boss_flags_t set_flags)
 {
-  _flag_link_t *p_link;
-  
   BOSS_IRQ_DISABLE();
   p_grp->flags = p_grp->flags | set_flags;
 
-  p_link = p_grp->wait_list;
-  while(p_link != _BOSS_NULL)
+  if(p_grp->wait_list != _BOSS_NULL)
   {
-    if( (p_link->wait_flags & set_flags) != 0 )
-    {
-      _Boss_sched_ready(p_link->p_tcb, BOSS_INDICATE_SUCCESS);
-    }
+    _flag_link_t *p_link = p_grp->wait_list;
     
-    p_link = p_link->next;
+    do {
+      if( (p_link->wait_flags & set_flags) != 0 )
+      {
+        _Boss_sched_ready(p_link->p_tcb, BOSS_INDICATE_SUCCESS);
+      }
+      
+      p_link = p_link->next;
+    } while(p_link != p_grp->wait_list);
   }
   BOSS_IRQ_RESTORE();
 
@@ -88,8 +89,8 @@ boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_flags_t wait_flags,
   
   BOSS_ASSERT((_BOSS_ISR_() == 0) || (timeout == NO_WAIT));
   
-  flag_link.prev        = _BOSS_NULL;
-  flag_link.next        = _BOSS_NULL;
+  //flag_link.prev        = &flag_link;
+  //flag_link.next        = &flag_link;
   flag_link.wait_flags  = wait_flags;
   flag_link.p_tcb       = Boss_self();
 
@@ -103,20 +104,17 @@ boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_flags_t wait_flags,
   if( (flags == 0) && (timeout != NO_WAIT) )
   {
     /* 이벤트 플래그 리스트에 추가 */
-    _flag_link_t *p_tail = p_grp->wait_list;
-    
-    if(p_tail == _BOSS_NULL)
-    {
-      p_grp->wait_list = &flag_link;
-    }
-    else
-    {
-      while(p_tail->next != _BOSS_NULL) {
-          p_tail = p_tail->next;
-      }
-      
-      flag_link.prev  = p_tail;
-      p_tail->next    = &flag_link;
+    if( p_grp->wait_list == _BOSS_NULL ) {    // 첫번째 등록
+        flag_link.prev    = &flag_link;
+        flag_link.next    = &flag_link;
+        p_grp->wait_list  = &flag_link;
+    } else {                                  // 추가 (Tail)
+        _flag_link_t *p_head = p_grp->wait_list;
+        
+        flag_link.prev = p_head->prev;
+        flag_link.next = p_head;        // p_head->prev->next 와 동일
+        p_head->prev->next  = &flag_link;
+        p_head->prev        = &flag_link;
     }
 
     do {
@@ -133,14 +131,17 @@ boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_flags_t wait_flags,
     } while((flags == 0) && (timeout != 0));
 
     /* 이벤트 플래그 대기 리스트에서 제거 */
-    if( flag_link.prev == _BOSS_NULL ) {
-        p_grp->wait_list = flag_link.next;
-    } else {
-        flag_link.prev->next  = flag_link.next;
-    }
+    flag_link.prev->next = flag_link.next;
+    flag_link.next->prev = flag_link.prev;
 
-    if(flag_link.next != _BOSS_NULL) {
-        flag_link.next->prev = flag_link.prev;
+    if(p_grp->wait_list == &flag_link)
+    {
+      if(flag_link.prev == &flag_link) {
+          BOSS_ASSERT(flag_link.next == &flag_link);
+          p_grp->wait_list = _BOSS_NULL;    // 마지막 제거
+      } else {
+          p_grp->wait_list = p_grp->wait_list->next;
+      }
     }
   }
   
