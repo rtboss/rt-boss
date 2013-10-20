@@ -68,37 +68,33 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
   BOSS_IRQ_DISABLE_SR(irq_storage);
   if(msg_q->wait_list != _BOSS_NULL)      /* Msg wait TCB가 있을때 직접 전송 */
   {
-    _msg_link_t *p_best = msg_q->wait_list;
+    _msg_link_t *p_best = msg_q->wait_list;       /* Head */
 
     if(msg_q->q_opt == MSG_Q_PRIORITY)            /* Find Best */
     {
       _msg_link_t *p_find = p_best->next;
       
-      while(p_find != _BOSS_NULL)
+      while(p_find != msg_q->wait_list)
       {
-        if(p_find->p_tcb->prio <= p_best->p_tcb->prio) {
+        if(p_find->p_tcb->prio < p_best->p_tcb->prio) {
             p_best = p_find;
         }
         p_find = p_find->next;
       }
     }
-    else  /* MSG_Q_FIFO */                        /* Find First */
-    {
-      while(p_best->next != _BOSS_NULL)
-      {
-        p_best = p_best->next;
-      }
-    }
     
     /* 메시지 대기 리스트에서 제거 (메시지 전송) */
-    if(p_best->prev == _BOSS_NULL) {
-        msg_q->wait_list    = p_best->next;
-    } else {
-        p_best->prev->next  = p_best->next;
-    }
+    p_best->prev->next = p_best->next;
+    p_best->next->prev = p_best->prev;
 
-    if(p_best->next != _BOSS_NULL) {
-        p_best->next->prev = p_best->prev;
+    if( msg_q->wait_list == p_best )
+    {
+      if( p_best->prev == p_best ) {
+          BOSS_ASSERT(p_best->next == p_best);
+          msg_q->wait_list = _BOSS_NULL;    // 마지막 제거
+      } else {
+          msg_q->wait_list = msg_q->wait_list->next;
+      }
     }
 
     p_best->msg.m_cmd = m_cmd;
@@ -174,8 +170,8 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
   
   Boss_self()->indicate = BOSS_INDICATE_CLEAR;
   
-  msg_wait.prev   = _BOSS_NULL;
-  msg_wait.next   = _BOSS_NULL;
+  //msg_wait.prev   = &msg_wait;
+  //msg_wait.next   = &msg_wait;
   msg_wait.p_tcb  = Boss_self();
   msg_wait.msg.m_cmd  = M_CMD_EMPTY;
   //msg_wait.msg.param  = 0;
@@ -194,11 +190,18 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
   else if( timeout != NO_WAIT )
   {
     /* 메시지 대기 리스트에 추가 */
-    if(msg_q->wait_list != _BOSS_NULL) {
-        msg_q->wait_list->prev  = &msg_wait;
-        msg_wait.next = msg_q->wait_list;
+    if( msg_q->wait_list == _BOSS_NULL ) {        // 첫번째 등록
+        msg_wait.prev     = &msg_wait;
+        msg_wait.next     = &msg_wait;
+        msg_q->wait_list  = &msg_wait;
+    } else {
+        _msg_link_t *p_head = msg_q->wait_list;
+
+        msg_wait.prev = p_head->prev;
+        msg_wait.next = p_head;        // p_head->prev->next 와 동일
+        p_head->prev->next  = &msg_wait;
+        p_head->prev        = &msg_wait;
     }
-    msg_q->wait_list = &msg_wait;
     BOSS_IRQ_RESTORE_SR(irq_storage);
 
     (void)_Boss_sched_wait(timeout);              /* 대기 (waiting)  */
@@ -207,16 +210,18 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
     if((Boss_self()->indicate & BOSS_INDICATE_SUCCESS) == 0)    /* 타임아웃 */
     {
       /* 메시지 대기 리스트에서 제거 (메시지 타임 아웃) */
-      if(msg_wait.prev == _BOSS_NULL) {
-          msg_q->wait_list    = msg_wait.next;
-      } else {
-          msg_wait.prev->next = msg_wait.next;
+      msg_wait.prev->next = msg_wait.next;
+      msg_wait.next->prev = msg_wait.prev;
+      
+      if(msg_q->wait_list == &msg_wait)
+      {
+        if(msg_wait.prev == &msg_wait) {
+          BOSS_ASSERT(msg_wait.next == &msg_wait);
+          msg_q->wait_list = _BOSS_NULL;    // 마지막 제거
+        } else {
+          msg_q->wait_list = msg_q->wait_list->next;
+        }
       }
-    
-      if(msg_wait.next != _BOSS_NULL) {
-          msg_wait.next->prev = msg_wait.prev;
-      }
-
       BOSS_ASSERT(msg_wait.msg.m_cmd == M_CMD_EMPTY);
     }
   }
