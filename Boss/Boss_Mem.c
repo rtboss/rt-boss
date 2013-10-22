@@ -9,7 +9,9 @@
 /*===========================================================================*/
 /*                               INCLUDE FILE                                */
 /*---------------------------------------------------------------------------*/
-#include "Boss_Mem.h"
+#include "Boss.h"
+
+#ifdef _BOSS_MEMORY_H_    // 사용 시 "Boss_Conf.h"에 #include "Boss_Mem.h" 포함
 
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
@@ -287,3 +289,5 @@ boss_uptr_t _Boss_mem_info_first_free(void)
 }
 
 #endif /* _BOSS_MEM_INFO_ */
+
+#endif  /* _BOSS_MEMORY_H_ */

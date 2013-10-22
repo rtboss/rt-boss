@@ -9,7 +9,9 @@
 /*===========================================================================*/
 /*                               INCLUDE FILE                                */
 /*---------------------------------------------------------------------------*/
-#include "Boss_Sem.h"
+#include "Boss.h"
+
+#ifdef _BOSS_SEM_H_       // 사용 시 "Boss_Conf.h"에 #include "Boss_Sem.h" 포함
 
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
@@ -131,3 +133,5 @@ void Boss_sem_release(boss_sem_t *p_sem)
 
   _Boss_schedule();
 }
+
+#endif  /* _BOSS_SEM_H_ */
