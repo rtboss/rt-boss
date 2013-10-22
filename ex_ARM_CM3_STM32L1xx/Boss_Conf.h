@@ -51,36 +51,11 @@ typedef struct {
   
     boss_u32_t    run_time;     /* Task run-time sum (us) */
     boss_u32_t    context;      /* Context Switch Number  */
+  #else
+    char  dummy;
   #endif
 } _boss_tcb_ex_t;
 #endif /* _BOSS_TCB_EXTEND_ */
-
-/*===========================================================================*/
-/*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
-/*---------------------------------------------------------------------------*/
-#define BOSS_IRQ_DISABLE_SR( _irq_storage_ )  \
-              do { _irq_storage_ = __get_PRIMASK(); __disable_irq(); } while(0)
-            
-#define BOSS_IRQ_RESTORE_SR( _irq_storage_ )  \
-                                  do { __set_PRIMASK(_irq_storage_); } while(0)
-
-/*----------------------------------------------------------------------*/
-#define BOSS_IRQ_DISABLE()    do { \
-                                boss_reg_t _irq_storage_;           \
-                                BOSS_IRQ_DISABLE_SR(_irq_storage_)
-
-#define BOSS_IRQ_RESTORE()      BOSS_IRQ_RESTORE_SR(_irq_storage_); \
-                              } while(0)
-
-/*----------------------------------------------------------------------*/
-#define _BOSS_IRQ_()        __get_PRIMASK() /* 0 = Enable / 0 != Disable */
-
-#define _BOSS_ISR_()        __get_IPSR()    /* 0 != ISR Active  */
-
-/*----------------------------------------------------------------------*/
-#define _BOSS_ISR_BEGIN()      do { _Boss_sched_lock()
-#define _BOSS_ISR_FINIS()      _Boss_sched_free(); } while(0)
-
 
 /*===========================================================================*/
 /*                             태스크 우선순위                               */
@@ -124,7 +99,41 @@ typedef enum {
 #include "Boss_Flag.h"
 #include "Boss_Q_Msg.h"
 #include "Boss_Sem.h"
+#ifdef _BOSS_SPY_
 #include "Boss_SPY.h"
+#endif
+
+#ifndef _BOSS_MEMORY_H_
+  #undef _BOSS_MEM_INFO_
+#endif
+
+
+/*===========================================================================*/
+/*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
+/*---------------------------------------------------------------------------*/
+#define BOSS_IRQ_DISABLE_SR( _irq_storage_ )  \
+              do { _irq_storage_ = __get_PRIMASK(); __disable_irq(); } while(0)
+            
+#define BOSS_IRQ_RESTORE_SR( _irq_storage_ )  \
+                                  do { __set_PRIMASK(_irq_storage_); } while(0)
+
+/*----------------------------------------------------------------------*/
+#define BOSS_IRQ_DISABLE()    do { \
+                                boss_reg_t _irq_storage_;           \
+                                BOSS_IRQ_DISABLE_SR(_irq_storage_)
+
+#define BOSS_IRQ_RESTORE()      BOSS_IRQ_RESTORE_SR(_irq_storage_); \
+                              } while(0)
+
+/*----------------------------------------------------------------------*/
+#define _BOSS_IRQ_()        __get_PRIMASK() /* 0 = Enable / 0 != Disable */
+
+#define _BOSS_ISR_()        __get_IPSR()    /* 0 != ISR Active  */
+
+/*----------------------------------------------------------------------*/
+#define _BOSS_ISR_BEGIN()      do { _Boss_sched_lock()
+#define _BOSS_ISR_FINIS()      _Boss_sched_free(); } while(0)
+
 
 /*===========================================================================*/
 /*                                    ASSERT                                 */

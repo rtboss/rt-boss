@@ -52,40 +52,11 @@ typedef struct {
   
     boss_u32_t    run_time;     /* Task run-time sum (us) */
     boss_u32_t    context;      /* Context Switch Number  */
+  #else
+    char  dummy;
   #endif
 } _boss_tcb_ex_t;
 #endif /* _BOSS_TCB_EXTEND_ */
-
-/*===========================================================================*/
-/*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
-/*---------------------------------------------------------------------------*/
-#define BOSS_IRQ_DISABLE_SR( _irq_storage_ )  \
-                    do { _irq_storage_ = SREG; asm volatile("cli"); } while(0)
-            
-#define BOSS_IRQ_RESTORE_SR( _irq_storage_ )  \
-                                        do { SREG = _irq_storage_; } while(0)
-
-/*----------------------------------------------------------------------*/
-#define BOSS_IRQ_DISABLE()    do { \
-                                boss_reg_t _irq_storage_;           \
-                                BOSS_IRQ_DISABLE_SR(_irq_storage_)
-
-#define BOSS_IRQ_RESTORE()      BOSS_IRQ_RESTORE_SR(_irq_storage_); \
-                              } while(0)
-
-/*----------------------------------------------------------------------*/
-#define _BOSS_IRQ_()    ( (SREG & (1 << SREG_I)) ? 0 : !0 ) /* 0 = Enable / !0 = Disable */
-
-#define _BOSS_ISR_()    _mcu_isr_()    /* !0 = ISR Active  */
-
-/*----------------------------------------------------------------------*/
-#define _BOSS_ISR_BEGIN()   do { _Boss_sched_lock(); _mcu_isr_begin()
-#define _BOSS_ISR_FINIS()   _mcu_isr_finis(); _Boss_sched_free(); } while(0)
-
-boss_reg_t _mcu_isr_(void);
-void _mcu_isr_begin(void);
-void _mcu_isr_finis(void);
-
 
 /*===========================================================================*/
 /*                             태스크 우선순위                               */
@@ -131,7 +102,45 @@ typedef enum {
 #include "Boss_Flag.h"
 #include "Boss_Q_Msg.h"
 #include "Boss_Sem.h"
+#ifdef _BOSS_SPY_
 #include "Boss_SPY.h"
+#endif
+
+#ifndef _BOSS_MEMORY_H_
+  #undef _BOSS_MEM_INFO_
+#endif
+
+
+/*===========================================================================*/
+/*   IRQ (Interrupt request) / ISR (Interrupt Service Routine)               */
+/*---------------------------------------------------------------------------*/
+#define BOSS_IRQ_DISABLE_SR( _irq_storage_ )  \
+                    do { _irq_storage_ = SREG; asm volatile("cli"); } while(0)
+            
+#define BOSS_IRQ_RESTORE_SR( _irq_storage_ )  \
+                                        do { SREG = _irq_storage_; } while(0)
+
+/*----------------------------------------------------------------------*/
+#define BOSS_IRQ_DISABLE()    do { \
+                                boss_reg_t _irq_storage_;           \
+                                BOSS_IRQ_DISABLE_SR(_irq_storage_)
+
+#define BOSS_IRQ_RESTORE()      BOSS_IRQ_RESTORE_SR(_irq_storage_); \
+                              } while(0)
+
+/*----------------------------------------------------------------------*/
+#define _BOSS_IRQ_()    ( (SREG & (1 << SREG_I)) ? 0 : !0 ) /* 0 = Enable / !0 = Disable */
+
+#define _BOSS_ISR_()    _mcu_isr_()    /* !0 = ISR Active  */
+
+/*----------------------------------------------------------------------*/
+#define _BOSS_ISR_BEGIN()   do { _Boss_sched_lock(); _mcu_isr_begin()
+#define _BOSS_ISR_FINIS()   _mcu_isr_finis(); _Boss_sched_free(); } while(0)
+
+boss_reg_t _mcu_isr_(void);
+void _mcu_isr_begin(void);
+void _mcu_isr_finis(void);
+
 
 /*===========================================================================*/
 /*                                    ASSERT                                 */
