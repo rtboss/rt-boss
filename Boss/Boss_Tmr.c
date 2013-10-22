@@ -9,7 +9,9 @@
 /*===========================================================================*/
 /*                               INCLUDE FILE                                */
 /*---------------------------------------------------------------------------*/
-#include "Boss_Tmr.h"
+#include "Boss.h"
+
+#ifdef _BOSS_TMR_H_       // 사용 시 "Boss_Conf.h"에 #include "Boss_Tmr.h" 포함
 
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
@@ -185,3 +187,5 @@ void _Boss_timer_tick(boss_tmr_ms_t tick_ms)
     }
   }
 }
+
+#endif  /* _BOSS_TMR_H_ */

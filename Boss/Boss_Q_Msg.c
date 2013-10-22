@@ -9,7 +9,9 @@
 /*===========================================================================*/
 /*                               INCLUDE FILE                                */
 /*---------------------------------------------------------------------------*/
-#include "Boss_Q_Msg.h"
+#include "Boss.h"
+
+#ifdef _BOSS_MSG_Q_H_   // 사용 시 "Boss_Conf.h"에 #include "Boss_Q_Msg.h" 포함
 
 /*===========================================================================*/
 /*                      DEFINITIONS & TYPEDEFS & MACROS                      */
@@ -229,3 +231,5 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
 
   return msg_wait.msg;
 }
+
+#endif  /* _BOSS_MSG_Q_H_ */
