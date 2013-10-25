@@ -29,6 +29,37 @@ void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate);
 boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 
 
+#ifdef _BOSS_MEMORY_H_
+/*===========================================================================
+    B O S S _ S E M _ C R E A T E
+---------------------------------------------------------------------------*/
+BOSS_SEM_ID_T Boss_sem_create(boss_reg_t sem_max)
+{
+  boss_sem_t  *p_sem;
+
+  p_sem = Boss_malloc(sizeof(boss_sem_t));
+
+  if(p_sem != _BOSS_NULL) {
+    Boss_sem_init(p_sem, sem_max);
+  }
+  
+  return p_sem;   // Semaphore ID
+}
+
+
+/*===========================================================================
+    B O S S _ S E M _ M F R E E _ D E L
+---------------------------------------------------------------------------*/
+void Boss_sem_mfree_del(boss_sem_t *p_sem)
+{
+  BOSS_ASSERT(p_sem != _BOSS_NULL);
+  BOSS_ASSERT(p_sem->wait_list == _BOSS_NULL);
+  
+  Boss_mfree(p_sem);
+}
+#endif /* _BOSS_MEMORY_H_ */
+
+
 /*===========================================================================
     B O S S _ S E M _ I N I T
 ---------------------------------------------------------------------------*/

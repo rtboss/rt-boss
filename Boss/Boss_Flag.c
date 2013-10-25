@@ -29,11 +29,44 @@ void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate);
 boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 
 
+#ifdef _BOSS_MEMORY_H_
+/*===========================================================================
+    B O S S _ F L A G _ G R P _ C R E A T E
+---------------------------------------------------------------------------*/
+BOSS_FLAG_ID_T Boss_flag_grp_create(void)
+{
+  boss_flag_grp_t *p_grp;
+
+  p_grp = Boss_malloc(sizeof(boss_flag_grp_t));
+  
+  if(p_grp != _BOSS_NULL) {
+      Boss_flag_grp_init(p_grp);
+  }
+
+  return p_grp;    // Flag ID
+}
+
+
+/*===========================================================================
+    B O S S _ F L A G _ G R P _ M F R E E _ D E L
+---------------------------------------------------------------------------*/
+void Boss_flag_grp_mfree_del(boss_flag_grp_t *p_grp)
+{
+  BOSS_ASSERT(p_grp != _BOSS_NULL);
+  BOSS_ASSERT(p_grp->wait_list == _BOSS_NULL);
+  
+  Boss_mfree(p_grp);
+}
+#endif /* _BOSS_MEMORY_H_ */
+
+
 /*===========================================================================
     B O S S _ F L A G _ G R P _ I N I T
 ---------------------------------------------------------------------------*/
 void Boss_flag_grp_init(boss_flag_grp_t *p_grp)
 {
+  BOSS_ASSERT(p_grp != _BOSS_NULL);
+  
   p_grp->flags      = 0;
   p_grp->wait_list  = _BOSS_NULL;
 }
@@ -44,6 +77,8 @@ void Boss_flag_grp_init(boss_flag_grp_t *p_grp)
 ---------------------------------------------------------------------------*/
 void Boss_flag_clear(boss_flag_grp_t *p_grp, boss_flags_t clr_flags)
 {
+  BOSS_ASSERT(p_grp != _BOSS_NULL);
+  
   BOSS_IRQ_DISABLE();
   p_grp->flags = p_grp->flags & ~clr_flags;
   BOSS_IRQ_RESTORE();
@@ -55,6 +90,8 @@ void Boss_flag_clear(boss_flag_grp_t *p_grp, boss_flags_t clr_flags)
 ---------------------------------------------------------------------------*/
 void Boss_flag_send(boss_flag_grp_t *p_grp, boss_flags_t set_flags)
 {
+  BOSS_ASSERT(p_grp != _BOSS_NULL);
+  
   BOSS_IRQ_DISABLE();
   p_grp->flags = p_grp->flags | set_flags;
 
@@ -87,6 +124,7 @@ boss_flags_t Boss_flag_wait(boss_flag_grp_t *p_grp, boss_flags_t wait_flags,
   boss_flags_t  flags;
   boss_reg_t    irq_storage;
   
+  BOSS_ASSERT(p_grp != _BOSS_NULL);
   BOSS_ASSERT((_BOSS_ISR_() == 0) || (timeout == NO_WAIT));
   
   //flag_link.prev        = &flag_link;

@@ -32,6 +32,43 @@ void _Boss_schedule(void);
 void _Boss_sched_ready(boss_tcb_t *p_tcb, boss_u08_t indicate);
 boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 
+#ifdef _BOSS_MEMORY_H_
+/*===========================================================================
+    B O S S _ M S G _ Q _ C R E A T E
+---------------------------------------------------------------------------*/
+BOSS_MSG_Q_ID_T Boss_msg_q_create(boss_u08_t fifo_max, _msg_q_opt_t q_opt)
+{
+  boss_msg_q_t  *msg_q;
+  boss_uptr_t   fifo_bytes = fifo_max * sizeof(boss_msg_t);
+
+  msg_q = Boss_malloc(sizeof(boss_msg_q_t) + fifo_bytes);
+
+  if(msg_q != _BOSS_NULL) {
+    boss_msg_t *p_fifo = _BOSS_NULL;
+    
+    if(fifo_bytes != 0) {
+        p_fifo = (boss_msg_t *)(msg_q + 1);
+    }
+    
+    Boss_msg_q_init(msg_q, p_fifo, fifo_bytes, q_opt);
+  }
+  
+  return msg_q;     // Msg Q ID
+}
+
+
+/*===========================================================================
+    B O S S _ M S G _ Q _ M F R E E _ D E L
+---------------------------------------------------------------------------*/
+void Boss_msg_q_mfree_del(boss_msg_q_t *msg_q)
+{
+  BOSS_ASSERT(msg_q != _BOSS_NULL);
+  BOSS_ASSERT(msg_q->wait_list == _BOSS_NULL);
+  
+  Boss_mfree(msg_q);
+}
+#endif /* _BOSS_MEMORY_H_ */
+
 
 /*===========================================================================
     B O S S _ M S G _ Q _ I N I T
@@ -39,6 +76,8 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 void Boss_msg_q_init(boss_msg_q_t *msg_q, boss_msg_t *p_fifo,
                                     boss_uptr_t fifo_bytes, _msg_q_opt_t q_opt)
 {
+  BOSS_ASSERT(msg_q != _BOSS_NULL);
+  
   if(p_fifo != _BOSS_NULL) {
       msg_q->msg_fifo = p_fifo;
       msg_q->fifo_max = fifo_bytes / sizeof(boss_msg_t);
@@ -66,6 +105,8 @@ static boss_reg_t _Boss_msg_opt_send( boss_msg_q_t *msg_q, msg_cmd_t m_cmd,
 {
   boss_reg_t  sent = (boss_reg_t)_BOSS_FAILURE;
   boss_reg_t  irq_storage;
+  
+  BOSS_ASSERT(msg_q != _BOSS_NULL);
   
   BOSS_IRQ_DISABLE_SR(irq_storage);
   if(msg_q->wait_list != _BOSS_NULL)      /* Msg wait TCB가 있을때 직접 전송 */
@@ -168,6 +209,7 @@ boss_msg_t Boss_msg_wait(boss_msg_q_t *msg_q, boss_tmr_ms_t timeout)
   _msg_link_t   msg_wait;
   boss_reg_t    irq_storage;
   
+  BOSS_ASSERT(msg_q != _BOSS_NULL);
   BOSS_ASSERT((_BOSS_ISR_() == 0) || (timeout == NO_WAIT));
   
   Boss_self()->indicate = BOSS_INDICATE_CLEAR;
