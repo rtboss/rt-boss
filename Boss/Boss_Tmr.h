@@ -25,9 +25,23 @@ typedef struct boss_tmr_struct {
 
 typedef void (*tmr_cb_t)(boss_tmr_t *);   // Timer Callback Type
 
+typedef boss_tmr_t *    BOSS_TMR_ID_T;    /* Timer ID TYPE */
+
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
+#ifdef _BOSS_MEMORY_H_
+BOSS_TMR_ID_T Boss_tmr_create(void);
+
+#define Boss_tmr_del(tmr_id)      do {                            \
+                                      Boss_tmr_mfree_del(tmr_id); \
+                                      tmr_id = _BOSS_NULL;        \
+                                    } while(0)
+
+void Boss_tmr_mfree_del(boss_tmr_t *p_tmr);
+#endif /* _BOSS_MEMORY_H_ */
+
+
 void Boss_tmr_start(boss_tmr_t *p_tmr, boss_tmr_ms_t tmr_ms, tmr_cb_t callback);
 void Boss_tmr_stop(boss_tmr_t *p_tmr);
 

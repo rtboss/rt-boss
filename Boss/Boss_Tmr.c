@@ -33,14 +33,45 @@
 /*---------------------------------------------------------------------------*/
 
 
+#ifdef _BOSS_MEMORY_H_
+/*===========================================================================
+    B O S S _ T M R _ C R E A T E
+---------------------------------------------------------------------------*/
+BOSS_TMR_ID_T Boss_tmr_create(void)
+{
+  boss_tmr_t *p_tmr;
+
+  p_tmr = Boss_malloc(sizeof(boss_tmr_t));
+
+  if(p_tmr != _BOSS_NULL) {
+      p_tmr->prev = _BOSS_NULL;
+      p_tmr->next = _BOSS_NULL;
+      p_tmr->tmr_ms = 0;
+  }
+
+  return p_tmr;   // Timer ID
+}
+
+
+/*===========================================================================
+    B O S S _ T M R _ M F R E E _ D E L
+---------------------------------------------------------------------------*/
+void Boss_tmr_mfree_del(boss_tmr_t *p_tmr)
+{
+  BOSS_ASSERT(p_tmr != _BOSS_NULL);
+  
+  Boss_tmr_stop(p_tmr);     // 등록된 Timer이면 중지
+  Boss_mfree(p_tmr);
+}
+#endif /* _BOSS_MEMORY_H_ */
+
+
 /*===========================================================================
     B O S S _ T M R _ S T A R T
 ---------------------------------------------------------------------------*/
 void Boss_tmr_start(boss_tmr_t *p_tmr, boss_tmr_ms_t tmr_ms, tmr_cb_t callback)
 {
-  if(p_tmr->prev != _BOSS_NULL) {
-      Boss_tmr_stop(p_tmr);
-  }
+  Boss_tmr_stop(p_tmr);     // 등록된 Timer이면 중지
   
   p_tmr->tmr_ms = tmr_ms;
   p_tmr->tmr_cb = callback;
