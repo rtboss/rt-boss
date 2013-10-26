@@ -146,7 +146,7 @@ int Boss_spy_task_status(boss_tcb_t *p_tcb)
 {
   int status = 0; // 0 : Wait, 1 : Pend, 2 : RUN
   
-  if( (p_tcb->run_next != _BOSS_NULL) || (p_tcb->prio == PRIO_BOSS_IDLE) )
+  if( (p_tcb->sched_next != _BOSS_NULL) || (p_tcb->prio == PRIO_BOSS_IDLE) )
   {
     if(Boss_self() != p_tcb) {
         status = 1;               // Pend

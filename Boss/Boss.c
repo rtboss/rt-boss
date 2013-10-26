@@ -68,7 +68,7 @@ static boss_tcb_t *_Boss_tcb_init(int (*task_entry)(void *p_arg), void *p_arg,
   
   stk_bytes = stk_bytes - TCB_SIZE;
   
-  p_tcb->run_next   = _BOSS_NULL;
+  p_tcb->sched_next = _BOSS_NULL;
   p_tcb->prio       = prio;
   p_tcb->indicate   = BOSS_INDICATE_CLEAR;
   
@@ -185,12 +185,12 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
 {
   //BOSS_ASSERT(_BOSS_IRQ_() != 0);
   
-  if(p_tcb->run_next == _BOSS_NULL)
+  if(p_tcb->sched_next == _BOSS_NULL)
   {
     if(p_tcb->prio < _sched_tcb_list->prio)
     {
-      p_tcb->run_next = _sched_tcb_list;
-      _sched_tcb_list = p_tcb;
+      p_tcb->sched_next = _sched_tcb_list;
+      _sched_tcb_list   = p_tcb;
     }
     else
     {
@@ -200,13 +200,13 @@ static void _Boss_sched_list_insert(boss_tcb_t *p_tcb)
 
       p_prev = _sched_tcb_list;
 
-      while(p_prev->run_next->prio <= p_tcb->prio)
+      while(p_prev->sched_next->prio <= p_tcb->prio)
       {
-        p_prev = p_prev->run_next;
+        p_prev = p_prev->sched_next;
       }
 
-      p_tcb->run_next   = p_prev->run_next;
-      p_prev->run_next  = p_tcb;
+      p_tcb->sched_next   = p_prev->sched_next;
+      p_prev->sched_next  = p_tcb;
     }
 
     #ifdef _BOSS_RR_QUANTUM_MS
@@ -223,25 +223,25 @@ static void _Boss_sched_list_remove(boss_tcb_t *p_tcb)
 {
   //BOSS_ASSERT(_BOSS_IRQ_() != 0);
   
-  if(p_tcb->run_next != _BOSS_NULL)
+  if(p_tcb->sched_next != _BOSS_NULL)
   {
     if(_sched_tcb_list == p_tcb)
     {
-      _sched_tcb_list = p_tcb->run_next;
+      _sched_tcb_list = p_tcb->sched_next;
     }
     else
     {
       boss_tcb_t *p_prev = _sched_tcb_list;
       
-      while(p_prev->run_next != p_tcb)
+      while(p_prev->sched_next != p_tcb)
       {
-        p_prev = p_prev->run_next;
+        p_prev = p_prev->sched_next;
       }
       
-      p_prev->run_next = p_tcb->run_next;
+      p_prev->sched_next = p_tcb->sched_next;
     }
     
-    p_tcb->run_next = _BOSS_NULL;         /* 스케줄러 리스트에서 제거됨 */
+    p_tcb->sched_next = _BOSS_NULL;       /* 스케줄러 리스트에서 제거됨 */
   }
 }
 
@@ -254,7 +254,7 @@ void _Boss_sched_rr_quantum_tick(boss_tmr_ms_t tick_ms)
 {
   boss_tcb_t  *cur_tcb = Boss_self();
   
-  if( cur_tcb->run_next && (cur_tcb->prio == cur_tcb->run_next->prio) )
+  if( cur_tcb->sched_next && (cur_tcb->prio == cur_tcb->sched_next->prio) )
   {
     if(cur_tcb->quantum_ms > tick_ms)
     {
@@ -466,7 +466,7 @@ void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio)
   BOSS_IRQ_DISABLE();
   p_tcb->prio = new_prio;
   
-  if(p_tcb->run_next != _BOSS_NULL)     /* schedule list update */
+  if(p_tcb->sched_next != _BOSS_NULL)     /* schedule list update */
   {
     _Boss_sched_list_remove(p_tcb);
     _Boss_sched_list_insert(p_tcb);

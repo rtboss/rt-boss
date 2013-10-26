@@ -37,7 +37,7 @@
 /*                        TCB (Task Control Block)                           */
 /*---------------------------------------------------------------------------*/
 typedef struct boss_tcb_struct {      /* [ TCB (Task Control Block) ] */  
-  struct boss_tcb_struct *run_next;       /* Schedule list link */
+  struct boss_tcb_struct *sched_next;     /* Schedule list link */
                                           /* NULL : Waiting / !NULL : Scheduled */
   
   boss_prio_t       prio;                 /* Task Priority  */
