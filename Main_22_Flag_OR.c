@@ -19,7 +19,7 @@
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
 
-boss_flag_grp_t test_flag_grp;
+BOSS_FLAG_ID_T ex_flag_id;
 
 
 /*===========================================================================*/
@@ -38,9 +38,9 @@ int aa_task(void *p_arg)
   
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_flag_grp Init\n");
-  Boss_flag_grp_init(&test_flag_grp);
-
+  PRINTF("flag grp Create & Init\n");
+  ex_flag_id = Boss_flag_grp_create();
+  
   Boss_sleep(100); // TASK init wait
   
   for(;;)
@@ -50,15 +50,15 @@ int aa_task(void *p_arg)
     ++aa_count;
     
     PRINTF("\n[%s] (%d) Boss_flag_send( FLAG_01 )\n", Boss_self()->name, aa_count);
-    Boss_flag_send(&test_flag_grp, FLAG_01);
+    Boss_flag_send(ex_flag_id, FLAG_01);
 
     Boss_sleep(1000);
     PRINTF("\n[%s] (%d) Boss_flag_send( FLAG_02 )\n", Boss_self()->name, aa_count);
-    Boss_flag_send(&test_flag_grp, FLAG_02);
+    Boss_flag_send(ex_flag_id, FLAG_02);
 
     Boss_sleep(1000);
     PRINTF("\n[%s] (%d) Boss_flag_send( FLAG_03 )\n", Boss_self()->name, aa_count);
-    Boss_flag_send(&test_flag_grp, FLAG_03);
+    Boss_flag_send(ex_flag_id, FLAG_03);
   }
   
   return 0;       // 테스크 종료
@@ -78,7 +78,7 @@ int bb_task(void *p_arg)
   
   for(;;)
   {
-    boss_flags_t flags = Boss_flag_wait(&test_flag_grp, FLAG_01 | FLAG_02 | FLAG_03,
+    boss_flags_t flags = Boss_flag_wait(ex_flag_id, FLAG_01 | FLAG_02 | FLAG_03,
                                 _FLAG_OPT_OR + _FLAG_OPT_CONSUME, 20*1000/*20초*/);
     
     if(flags != 0)
@@ -152,7 +152,7 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            test_flag_grp Init
+            flag grp Create & Init
             [BB TASK] Init 
             
             [AA] (1) Boss_flag_send( FLAG_01 )

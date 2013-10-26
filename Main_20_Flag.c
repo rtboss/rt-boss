@@ -19,7 +19,7 @@
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
 
-boss_flag_grp_t test_flag_grp;
+BOSS_FLAG_ID_T ex_flag_id;
 
 
 /*===========================================================================*/
@@ -38,18 +38,20 @@ int aa_task(void *p_arg)
   
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_flag_grp Init\n");
-  Boss_flag_grp_init(&test_flag_grp);
-
+  PRINTF("flag grp Create & Init\n");
+  ex_flag_id = Boss_flag_grp_create();
+  
   Boss_sleep(100); // TASK init wait
   
   for(;;)
   {
-    Boss_sleep(2000);    
+    Boss_sleep(2000);
     
     PRINTF("\n[%s] (%d) Boss_flag_send()\n", Boss_self()->name, ++aa_count);
-    Boss_flag_send(&test_flag_grp, 0x0001);
+    Boss_flag_send(ex_flag_id, 0x0001);
   }
+
+  Boss_flag_grp_del(ex_flag_id);  // 플래그 그룹 해제
   
   return 0;       // 테스크 종료
 }
@@ -68,13 +70,13 @@ int bb_task(void *p_arg)
   
   for(;;)
   {
-    boss_flags_t flags = Boss_flag_wait(&test_flag_grp, 0x0001,
-                                                _FLAG_OPT_OR, 20*1000/*20초*/);
+    boss_flags_t flags;
+    
+    flags = Boss_flag_wait(ex_flag_id, 0x0001, _FLAG_OPT_OR, 20*1000/*20초*/);
     if(flags != 0)
     {
-      PRINTF("[%s] Boss_flag_wait(OR + CONSUME) flags = 0x%04x\n",
-                                                      Boss_self()->name, flags);
-      Boss_flag_clear(&test_flag_grp, 0x0001); // 수신한 flag 수동 클리어
+      PRINTF("[%s] Boss_flag_wait(OR) flags = 0x%04x\n", Boss_self()->name, flags);
+      Boss_flag_clear(ex_flag_id, 0x0001);  // 수신한 flag 수동 클리어
     }
     else
     {
@@ -131,27 +133,27 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            test_flag_grp Init
+            flag grp Create & Init
             [BB TASK] Init 
             
             [AA] (1) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
             
             [AA] (2) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
             
             [AA] (3) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
             
             [AA] (4) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
             
             [AA] (5) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
             
             [AA] (6) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
             
             [AA] (7) Boss_flag_send()
-            [BB] Boss_flag_wait( OR ) flags = 0x0001
+            [BB] Boss_flag_wait(OR) flags = 0x0001
 */

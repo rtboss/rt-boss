@@ -19,7 +19,7 @@
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
 
-boss_flag_grp_t test_flag_grp;
+BOSS_FLAG_ID_T ex_flag_id;
 
 
 /*===========================================================================*/
@@ -38,9 +38,9 @@ int aa_task(void *p_arg)
   
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_flag_grp Init\n");
-  Boss_flag_grp_init(&test_flag_grp);
-
+  PRINTF("flag grp Create & Init\n");
+  ex_flag_id = Boss_flag_grp_create();
+  
   Boss_sleep(100); // TASK init wait
   
   for(;;)
@@ -48,7 +48,7 @@ int aa_task(void *p_arg)
     Boss_sleep(2000);
     
     PRINTF("\n[%s] (%d) Boss_flag_send()\n", Boss_self()->name, ++aa_count);
-    Boss_flag_send(&test_flag_grp, 0x0001);
+    Boss_flag_send(ex_flag_id, 0x0001);
   }
   
   return 0;       // 테스크 종료

@@ -19,7 +19,7 @@
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
 
-boss_flag_grp_t test_flag_grp;
+BOSS_FLAG_ID_T ex_flag_id;
 
 
 /*===========================================================================*/
@@ -38,9 +38,9 @@ int aa_task(void *p_arg)
   
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_flag_grp Init\n");
-  Boss_flag_grp_init(&test_flag_grp);
-
+  PRINTF("flag grp Create & Init\n");
+  ex_flag_id = Boss_flag_grp_create();
+  
   Boss_sleep(100); // TASK init wait
   
   for(;;)
@@ -50,7 +50,7 @@ int aa_task(void *p_arg)
     ++aa_count;
     
     PRINTF("\n[%s] (%d) Boss_flag_send( FLAG_01 )\n", Boss_self()->name, aa_count);
-    Boss_flag_send(&test_flag_grp, FLAG_01);
+    Boss_flag_send(ex_flag_id, FLAG_01);
   }
   
   return 0;       // 테스크 종료
@@ -71,7 +71,7 @@ int cx_task(void *p_arg)
 
   for(;;)
   {
-    boss_flags_t flags = Boss_flag_wait(&test_flag_grp, FLAG_01,
+    boss_flags_t flags = Boss_flag_wait(ex_flag_id, FLAG_01,
                             _FLAG_OPT_OR + _FLAG_OPT_CONSUME, 20*1000/*20초*/);
     if(flags != 0)
     {
@@ -151,47 +151,47 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            test_flag_grp Init
+            flag grp Create & Init
             [C01 TASK] Init 
             [C02 TASK] Init 
             [C03 TASK] Init 
             [C04 TASK] Init 
             [C05 TASK] Init 
             
-            [AA] (1) Boss_flag_send()
+            [AA] (1) Boss_flag_send( FLAG_01 )
             [C01] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (2) Boss_flag_send()
+            [AA] (2) Boss_flag_send( FLAG_01 )
             [C02] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (3) Boss_flag_send()
+            [AA] (3) Boss_flag_send( FLAG_01 )
             [C03] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (4) Boss_flag_send()
+            [AA] (4) Boss_flag_send( FLAG_01 )
             [C04] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (5) Boss_flag_send()
+            [AA] (5) Boss_flag_send( FLAG_01 )
             [C05] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (6) Boss_flag_send()
+            [AA] (6) Boss_flag_send( FLAG_01 )
             [C01] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (7) Boss_flag_send()
+            [AA] (7) Boss_flag_send( FLAG_01 )
             [C02] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (8) Boss_flag_send()
+            [AA] (8) Boss_flag_send( FLAG_01 )
             [C03] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (9) Boss_flag_send()
+            [AA] (9) Boss_flag_send( FLAG_01 )
             [C04] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (10) Boss_flag_send()
+            [AA] (10) Boss_flag_send( FLAG_01 )
             [C05] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (11) Boss_flag_send()
+            [AA] (11) Boss_flag_send( FLAG_01 )
             [C01] Boss_flag_wait(OR + CONSUME) flags = 0x0001
             
-            [AA] (12) Boss_flag_send()
+            [AA] (12) Boss_flag_send( FLAG_01 )
             [C02] Boss_flag_wait(OR + CONSUME) flags = 0x0001
 
             ------- 중략 -------
