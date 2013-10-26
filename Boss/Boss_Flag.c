@@ -33,7 +33,7 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 /*===========================================================================
     B O S S _ F L A G _ G R P _ C R E A T E
 ---------------------------------------------------------------------------*/
-BOSS_FLAG_ID_T Boss_flag_grp_create(void)
+boss_flag_grp_t *Boss_flag_grp_create(void)
 {
   boss_flag_grp_t *p_grp;
 

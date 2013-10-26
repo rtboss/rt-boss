@@ -45,7 +45,7 @@ void _Boss_spy_elapse_tick(boss_u32_t tick_ms);
 /*===========================================================================
     B O S S _ S E L F
 ---------------------------------------------------------------------------*/
-BOSS_TID_T Boss_self(void)
+boss_tcb_t *Boss_self(void)
 {
   return _current_tcb;
 }
@@ -108,7 +108,7 @@ static boss_tcb_t *_Boss_tcb_init(int (*task_entry)(void *p_arg), void *p_arg,
 /*===========================================================================
     B O S S _ I N I T
 ---------------------------------------------------------------------------*/
-BOSS_TID_T Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
+boss_tcb_t *Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
                                     boss_stk_t *p_stack, boss_uptr_t stk_bytes)
 {
   boss_tcb_t *p_idle_tcb;
@@ -440,7 +440,7 @@ void _Boss_tick(boss_tmr_ms_t tick_ms)
 /*===========================================================================
     B O S S _ T A S K _ C R E A T E
 ---------------------------------------------------------------------------*/
-BOSS_TID_T Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
+boss_tcb_t *Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
                                   boss_stk_t *p_stack, boss_uptr_t stk_bytes,
                                             boss_prio_t prio, const char *name)
 {

@@ -36,7 +36,7 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 /*===========================================================================
     B O S S _ M S G _ Q _ C R E A T E
 ---------------------------------------------------------------------------*/
-BOSS_MSG_Q_ID_T Boss_msg_q_create(boss_u08_t fifo_max, _msg_q_opt_t q_opt)
+boss_msg_q_t *Boss_msg_q_create(boss_u08_t fifo_max, _msg_q_opt_t q_opt)
 {
   boss_msg_q_t  *msg_q;
   boss_uptr_t   fifo_bytes = fifo_max * sizeof(boss_msg_t);

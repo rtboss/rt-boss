@@ -33,7 +33,7 @@ boss_tmr_ms_t _Boss_sched_wait(boss_tmr_ms_t timeout);
 /*===========================================================================
     B O S S _ S E M _ C R E A T E
 ---------------------------------------------------------------------------*/
-BOSS_SEM_ID_T Boss_sem_create(boss_reg_t sem_max)
+boss_sem_t *Boss_sem_create(boss_reg_t sem_max)
 {
   boss_sem_t  *p_sem;
 

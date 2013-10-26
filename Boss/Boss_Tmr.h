@@ -31,7 +31,7 @@ typedef boss_tmr_t *    BOSS_TMR_ID_T;    /* Timer ID TYPE */
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 #ifdef _BOSS_MEMORY_H_
-BOSS_TMR_ID_T Boss_tmr_create(void);
+boss_tmr_t *Boss_tmr_create(void);
 
 #define Boss_tmr_del(tmr_id)      do {                            \
                                       Boss_tmr_mfree_del(tmr_id); \

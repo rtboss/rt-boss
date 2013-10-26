@@ -66,15 +66,15 @@ typedef boss_tcb_t *    BOSS_TID_T;       /* TASK ID TYPE (TCB Point) */
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
-BOSS_TID_T  Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
+boss_tcb_t *Boss_init(int (*idle_task_entry)(void *p_arg), void *p_arg,
                                     boss_stk_t *p_stack, boss_uptr_t stk_bytes);
 
 void        Boss_start(void);
-BOSS_TID_T  Boss_self(void);
+boss_tcb_t *Boss_self(void);
 
 void        Boss_sleep(boss_tmr_ms_t timeout);
 
-BOSS_TID_T  Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
+boss_tcb_t *Boss_task_create(int (*task_entry)(void *p_arg), void *p_arg,
                                   boss_stk_t *p_stack, boss_uptr_t stk_bytes,
                                             boss_prio_t prio, const char *name);
 void Boss_task_priority(boss_tcb_t *p_tcb, boss_prio_t new_prio);

@@ -42,7 +42,7 @@ typedef boss_flag_grp_t *   BOSS_FLAG_ID_T;  /* Flag ID TYPE (Flag grp Point) */
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 #ifdef _BOSS_MEMORY_H_
-BOSS_FLAG_ID_T Boss_flag_grp_create(void);
+boss_flag_grp_t *Boss_flag_grp_create(void);
 
 #define Boss_flag_grp_del(flag_id)  do {                                \
                                       Boss_flag_grp_mfree_del(flag_id); \

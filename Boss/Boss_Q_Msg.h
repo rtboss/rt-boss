@@ -55,7 +55,7 @@ typedef boss_msg_q_t *  BOSS_MSG_Q_ID_T;    /* Message Queue ID TYPE */
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 #ifdef _BOSS_MEMORY_H_
-BOSS_MSG_Q_ID_T Boss_msg_q_create(boss_u08_t fifo_max, _msg_q_opt_t q_opt);
+boss_msg_q_t *Boss_msg_q_create(boss_u08_t fifo_max, _msg_q_opt_t q_opt);
 
 #define Boss_msg_q_del(msg_q_id)  do {                                \
                                       Boss_msg_q_mfree_del(msg_q_id); \

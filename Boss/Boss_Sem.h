@@ -37,7 +37,7 @@ typedef boss_sem_t *    BOSS_SEM_ID_T;    /* Semaphore ID TYPE */
 /*                            FUNCTION PROTOTYPES                            */
 /*---------------------------------------------------------------------------*/
 #ifdef _BOSS_MEMORY_H_
-BOSS_SEM_ID_T Boss_sem_create(boss_reg_t sem_max);
+boss_sem_t *Boss_sem_create(boss_reg_t sem_max);
 
 #define Boss_sem_del(sem_id)      do {                            \
                                       Boss_sem_mfree_del(sem_id); \
