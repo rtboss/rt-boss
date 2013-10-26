@@ -25,8 +25,7 @@
 void Boss_device_init(void);
 
 
-
-boss_tmr_t timer1 = {0,};   // 타이머 선언후 "0"으로 초기화
+BOSS_TMR_ID_T ex_timer1_id; // 타이머 ID
 
 
 /*===========================================================================
@@ -35,6 +34,7 @@ boss_tmr_t timer1 = {0,};   // 타이머 선언후 "0"으로 초기화
 void timer1_callback(boss_tmr_t *p_tmr)
 {
   PRINTF("timer1_callback() 실행\n");
+  Boss_tmr_del(ex_timer1_id);   // 타이머 반환(해제).
 }
 
 
@@ -45,9 +45,15 @@ boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
 {  
-  PRINTF("Timer1 등록\n");
+  PRINTF("\n[[ 타이머 예제 ]]\n");
+  PRINTF("타이머는 ISR에서 독립적으로 실행함.\n");
+  
+  PRINTF("Timer1 생성\n");
+  ex_timer1_id = Boss_tmr_create();   // 타이머 생성
 
-  Boss_tmr_start(&timer1, 3*1000 /*ms*/, timer1_callback); // 3초후 timer1_callback 실행
+  PRINTF("Timer1 등록\n");
+  Boss_tmr_start(ex_timer1_id, 3*1000 /*ms*/, timer1_callback); // 3초후 timer1_callback 실행
+
   
   for(;;)
   {
@@ -104,6 +110,9 @@ int main(void)
 
 ########## 실행 결과 ##########
 
+  [[ 타이머 예제 ]]
+  타이머는 ISR에서 독립적으로 실행함.
+  Timer1 생성
   Timer1 등록
   timer1_callback() 실행
     

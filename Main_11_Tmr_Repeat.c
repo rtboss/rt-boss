@@ -25,10 +25,6 @@
 void Boss_device_init(void);
 
 
-
-boss_tmr_t timer1 = {0,};   // 타이머 선언후 "0"으로 초기화
-
-
 /*===========================================================================
     T I M E R 1 _ C A L L B A C K
 ---------------------------------------------------------------------------*/
@@ -42,7 +38,8 @@ void timer1_callback(boss_tmr_t *p_tmr)
     Boss_tmr_start(p_tmr, 3*1000 /*ms*/, timer1_callback);  // 재등록 (반복실행)
     PRINTF("(%d) timer1_callback() 반복\n", timer1_cnt);
   } else {
-    PRINTF("(%d) timer1_callback() 반복 끝\n", timer1_cnt);
+    PRINTF("(%d) timer1_callback() 타이머 반환(해제)\n", timer1_cnt);
+    Boss_tmr_del(p_tmr);  // 타이머 반환(해제)
   }
 }
 
@@ -54,9 +51,8 @@ boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
 {  
-  PRINTF("Timer1 등록\n");
-
-  Boss_tmr_start(&timer1, 3*1000 /*ms*/, timer1_callback); // 3초후 timer1_callback 실행
+  PRINTF("Timer1 생성 및 등록\n");
+  Boss_tmr_start( Boss_tmr_create(), 3*1000 /*ms*/, timer1_callback); // 3초후 timer1_callback 실행
   
   for(;;)
   {
@@ -108,12 +104,12 @@ int main(void)
 
 
 /*
-설명 : 타이머(timer1)을 등록한후 3초마다 10회 반복 실행
+설명 : 타이머를 등록한후 3초마다 10회 반복 실행
 
 
 ########## 실행 결과 ##########
 
-  Timer1 등록
+  Timer1 생성 및 등록
   (1) timer1_callback() 반복
   (2) timer1_callback() 반복
   (3) timer1_callback() 반복
@@ -123,7 +119,7 @@ int main(void)
   (7) timer1_callback() 반복
   (8) timer1_callback() 반복
   (9) timer1_callback() 반복
-  (10) timer1_callback() 반복 끝
+  (10) timer1_callback() 타이머 반환(해제)
     
 */
 
