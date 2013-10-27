@@ -18,7 +18,7 @@
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
-boss_sem_t sem_test;
+BOSS_SEM_ID_T ex_sem_id;
 
 int g_count = 0;
 
@@ -34,22 +34,22 @@ boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
 {  
-  PRINTF("[세마포어 초기화]\n\n");
+  PRINTF("[세마포어 생성 및 초기화]\n\n");
 
-  Boss_sem_init(&sem_test, 1);
+  ex_sem_id = Boss_sem_create(1);   // sem_max 가 "1" 경우 바이너리 세마포어
   
   for(;;)
   {
     Boss_sleep(1000);  /* ms */
 
-    if( _BOSS_SUCCESS == Boss_sem_obtain(&sem_test, 5/*ms*/) )
+    if( _BOSS_SUCCESS == Boss_sem_obtain(ex_sem_id, 5/*ms*/) )
     {
       PRINTF("[[ 세마포어 (획득) \n");
 
       g_count++;
       PRINTF("g_count = %d \n", g_count);
 
-      Boss_sem_release(&sem_test);
+      Boss_sem_release(ex_sem_id);
       PRINTF("]] 세마포어 (반환) \n\n");
     }
     else
@@ -104,7 +104,7 @@ int main(void)
 /*
         ########## 실행 결과 ##########
 
-            [세마포어 초기화]
+            [세마포어 생성 및 초기화]
             
             [[ 세마포어 (획득) 
             g_count = 1 
