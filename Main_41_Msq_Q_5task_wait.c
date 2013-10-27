@@ -18,8 +18,7 @@
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
-boss_msg_q_t  test_msg_q;
-boss_msg_t    test_msg_fifo[10];
+BOSS_MSG_Q_ID_T   ex_msg_q_id;
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
@@ -35,9 +34,9 @@ int aa_task(void *p_arg)
 {
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_msg_q Init\n");
-  Boss_msg_q_init(&test_msg_q, test_msg_fifo, sizeof(test_msg_fifo), MSG_Q_FIFO);
-  //Boss_msg_q_init(&test_msg_q, test_msg_fifo, sizeof(test_msg_fifo), MSG_Q_PRIORITY);
+  PRINTF("msg_q Create & Init\n");
+  ex_msg_q_id = Boss_msg_q_create(10, MSG_Q_FIFO);      // msg_fifo = 10, FIFO 동작
+  //ex_msg_q_id = Boss_msg_q_create(10, MSG_Q_PRIORITY);  // msg_fifo = 10, 우선순위
   
   Boss_sleep(100); // TASK init wait
   
@@ -48,7 +47,7 @@ int aa_task(void *p_arg)
     Boss_sleep(2000);    
     param_count++;
 
-    if(_BOSS_SUCCESS != Boss_msg_send(&test_msg_q, M_CMD_1, (boss_uptr_t)param_count))
+    if(_BOSS_SUCCESS != Boss_msg_send(ex_msg_q_id, M_CMD_1, (boss_uptr_t)param_count))
     {
       PRINTF("FAILURE : MSG Q FIFO FULL\n");
     }
@@ -76,7 +75,7 @@ int cx_task(void *p_arg)
 
   for(;;)
   {
-    boss_msg_t msg = Boss_msg_wait(&test_msg_q, 10*1000/*10초*/);
+    boss_msg_t msg = Boss_msg_wait(ex_msg_q_id, 10*1000/*10초*/);
 
     switch(msg.m_cmd)
     {
@@ -158,7 +157,7 @@ int main(void)
         ########## 실행 결과 ##########
         
             [AA TASK] Init 
-            test_msg_q Init
+            msg_q Create & Init
             [C01 TASK] Init 
             [C02 TASK] Init 
             [C03 TASK] Init 

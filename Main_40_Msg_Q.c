@@ -18,8 +18,7 @@
 /*===========================================================================*/
 /*                             GLOBAL VARIABLES                              */
 /*---------------------------------------------------------------------------*/
-boss_msg_q_t  test_msg_q;
-boss_msg_t    test_msg_fifo[10];
+BOSS_MSG_Q_ID_T   ex_msg_q_id;
 
 /*===========================================================================*/
 /*                            FUNCTION PROTOTYPES                            */
@@ -32,11 +31,11 @@ void Boss_device_init(void);
 boss_stk_t aa_stk[ 512 / sizeof(boss_stk_t)];
 
 int aa_task(void *p_arg)
-{  
+{
   PRINTF("[%s TASK] Init \n", Boss_self()->name);
 
-  PRINTF("test_msg_q Init\n");
-  Boss_msg_q_init(&test_msg_q, test_msg_fifo, sizeof(test_msg_fifo), MSG_Q_PRIORITY);
+  PRINTF("msg_q Create & Init\n");
+  ex_msg_q_id = Boss_msg_q_create(10, MSG_Q_PRIORITY);  // msg_fifo = 10, 우선순위
 
   Boss_sleep(100); // BB TASK init wait
   
@@ -45,7 +44,7 @@ int aa_task(void *p_arg)
     boss_msg_t msg;
 
     PRINTF("\n[%s] MSG Q Wait\n", Boss_self()->name);
-    msg = Boss_msg_wait(&test_msg_q, 5000);   /* 5초 타임아웃 */
+    msg = Boss_msg_wait(ex_msg_q_id, 5000);   /* 5초 타임아웃 */
 
     switch(msg.m_cmd)
     {
@@ -88,7 +87,7 @@ int bb_task(void *p_arg)
     
     PRINTF("[%s] Boss_msg_send( param = %d )\n", Boss_self()->name, bb_count);
     
-    if( _BOSS_SUCCESS != Boss_msg_send(&test_msg_q, M_CMD_1, (boss_uptr_t)bb_count) )
+    if( _BOSS_SUCCESS != Boss_msg_send(ex_msg_q_id, M_CMD_1, (boss_uptr_t)bb_count) )
     {
       PRINTF("FAILURE : MSG Q FIFO FULL\n");
     }
@@ -143,7 +142,7 @@ int main(void)
         ########## 실행 결과 ##########
 
             [AA TASK] Init 
-            test_msg_q Init
+            msg_q Create & Init
             [BB TASK] Init 
             
             [AA] MSG Q Wait
