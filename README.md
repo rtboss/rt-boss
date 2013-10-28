@@ -2,6 +2,20 @@ RT-BOSS
 =======
 > [RT-BOSS 네이버 카페](http://cafe.naver.com/rtboss "http://cafe.naver.com/rtboss")
 
+### V1.31 (2013/10/29) ###
+	- 기능별 생성/삭제 기능 추가. (메모리 관리자에서 할당)
+	 * 생성 : xxx_ID = Boss_xxx_create()
+	 * 삭제 : Boss_xxx_del(xxx_ID)
+	 (타이머 / 플래그 그룹 / 세마포어 / 메지시 큐)
+
+	- 예제 추가 및 정리. (기능별 생성/삭제 적용)
+	- 메시지 큐 기능 개선. (이중 원형 링크)
+	- 플래그 이벤트 기능 개선. (이중 원형 링크)
+	- 커널 Timeout Tick 과 Timer Tick 분리.
+	- Demo 프로젝트 폴더 이름 변경.
+	- 기능별 헤드파일 추가/제거로 동작 설정. (Boss_Conf.h)
+
+
 ### V1.30 (2013/10/13) ###
 	- 시그널(Signal) 기능 제거. (Flag로 대체 가능)
 	- TCB 와 Stack 통합. (Stack에 TCB 할당)
