@@ -35,6 +35,8 @@ typedef boss_u16_t          boss_flags_t;     /* 플래그                 */
 #define _BOSS_MEM_POOL_SIZE     1024    /* Bytes              */
 #define _BOSS_MEM_INFO_                 /* 메모리 디버거 정보 */
 
+#define _BOSS_ASSERT_
+
 /*===========================================================================*/
 /*                           TCB 확장(Extension)                             */
 /*---------------------------------------------------------------------------*/
@@ -138,8 +140,22 @@ typedef enum {
 /*===========================================================================*/
 /*                                    ASSERT                                 */
 /*---------------------------------------------------------------------------*/
+#ifdef _BOSS_ASSERT_
+#if 1
+#define BOSS_ASSERT(expr) do { if(!(expr)) for(;;); } while(0)
+#else
+#if defined ( __CC_ARM )
+#define BOSS_ASSERT(expr) do { if(!(expr)) _assert(__MODULE__,__LINE__); } while(0)
+#else
 #define BOSS_ASSERT(expr) do { if(!(expr)) _assert(__FILE__,__LINE__); } while(0)
+#endif
+
 void _assert(const char *file, unsigned int line);
+#endif
+
+#else
+#define BOSS_ASSERT(expr)
+#endif
 
 /*===========================================================================*/
 /*                                [ S P Y ]                                  */
